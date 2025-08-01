@@ -1,0 +1,30 @@
+{
+  "name": "@spotify/basic-pitch",
+  "version": "0.0.0-development",
+  "description": "A JS module that takes audio and converts it to MIDI",
+  "main": "src/index.js",
+  "license": "Apache-2.0",
+  "type": "module",
+  "files": [
+    "src",
+    "model"
+  ],
+  "scripts": {
+    "test": "web-scripts test",
+    "build": "web-scripts build"
+  },
+  "devDependencies": {
+    "@spotify/web-scripts": "^13.0.1",
+    "@tensorflow/tfjs-node": "^3.2.0",
+    "audio-loader": "^1.0.3",
+    "midi-writer-js": "^1.7.5",
+    "synth-js": "^0.1.2",
+    "ts-jest": "^27.0.0",
+    "ts-node": "^10.9.2",
+    "web-audio-api": "^0.2.2"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs": "^3.2.0",
+    "@tonejs/midi": "^2.0.28"
+  }
+}
