@@ -189,7 +189,16 @@ function getInferredOnsets(onsets, frames, nDiff = 2) {
  * @param {*} melodiaTrick
  * @param {*} energyTolerance
  *
- * @returns
+ * @returns an array of note events objects
+ * 
+ * Note Event: 
+  {
+    startFrame: int number,
+    durationFrames: int number (iEnd - iStart),
+    pitchMidi: int number,
+    amplitude: float number
+  }
+ * 
  */
 export function outputToNotesPoly(
   frames,
@@ -268,12 +277,14 @@ export function outputToNotesPoly(
           .slice(noteStartIdx, i)
           .reduce((prev, row) => prev + row[freqIdx], 0) /
         (i - noteStartIdx);
+
       return {
         startFrame: noteStartIdx,
         durationFrames: i - noteStartIdx,
         pitchMidi: freqIdx + MIDI_OFFSET,
         amplitude: amplitude,
       };
+
     })
     .filter(isNotNull);
 
@@ -361,6 +372,14 @@ const midiPitchToContourBin = (pitchMidi) =>
   CONTOURS_BINS_PER_SEMITONE *
   Math.log2(midiToHz(pitchMidi) / ANNOTATIONS_BASE_FREQUENCY);
 
+/**
+ * 
+ * @param {*} contours the contours returned by the BaiscPitch detection  
+ * @param {*} notes the note events  
+ * @param {*} nBinsTolerance ?
+ * 
+ * @returns 
+ */  
 export function addPitchBendsToNoteEvents(
   contours,
   notes,
