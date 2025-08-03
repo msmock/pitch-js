@@ -23,10 +23,22 @@ const N_FREQ_BINS_CONTOURS =
   ANNOTATIONS_N_SEMITONES * CONTOURS_BINS_PER_SEMITONE;
 const hzToMidi = (hz) => 12 * (Math.log2(hz) - Math.log2(440.0)) + 69;
 const midiToHz = (midi) => 440.0 * 2.0 ** ((midi - 69.0) / 12.0);
+
+/**
+ * convert the frame index to time in seconds
+ * 
+ * @param {} frame 
+ * @returns the time in seconds
+ */
 const modelFrameToTime = (frame) =>
   (frame * FFT_HOP) / AUDIO_SAMPLE_RATE -
   WINDOW_OFFSET * Math.floor(frame / ANNOT_N_FRAMES);
 
+/**
+ * 
+ * @param {*} arr 
+ * @returns 
+ */  
 function argMax(arr) {
   return arr.length === 0
     ? null
@@ -177,12 +189,13 @@ function getInferredOnsets(onsets, frames, nDiff = 2) {
 }
 
 /**
- *
+ * Convert the onsets and frames as returend by BasicPitch to note events
+ * 
  * @param {*} frames as returned from BasicPitch
  * @param {*} onsets as returned from BasicPitch
  * @param {*} onsetThresh
  * @param {*} frameThresh
- * @param {*} minNoteLen
+ * @param {*} minNoteLen 
  * @param {*} inferOnsets
  * @param {*} maxFreq
  * @param {*} minFreq
@@ -362,11 +375,25 @@ export function outputToNotesPoly(
   return noteEvents;
 }
 
+/**
+ * Create gaussian distribution with mean and standard deviation
+ * 
+ * @param {*} M 
+ * @param {*} std 
+ * 
+ * @returns an array of a gaussian distribution 
+ */
 const gaussian = (M, std) =>
   Array.from(Array(M).keys()).map((n) =>
     Math.exp((-1 * (n - (M - 1) / 2) ** 2) / (2 * std ** 2))
   );
 
+/**
+ * 
+ * @param {*} pitchMidi number of the midi pitch
+ * 
+ * @returns 
+ */  
 const midiPitchToContourBin = (pitchMidi) =>
   12.0 *
   CONTOURS_BINS_PER_SEMITONE *
@@ -421,6 +448,21 @@ export function addPitchBendsToNoteEvents(
   });
 }
 
+/**
+ * Convert the frame indicees of the start frame and the duration frames to time in seconds
+ * 
+ * @param {*} notes 
+ * 
+ * notes: 
+  {
+    startFrame: int number,
+    durationFrames: int number (iEnd - iStart),
+    pitchMidi: int number,
+    amplitude: float number
+  }
+ * 
+ * @returns an array of timed note events
+ */
 export const noteFramesToTime = (notes) =>
   notes.map((note) => {
     return {
@@ -434,7 +476,14 @@ export const noteFramesToTime = (notes) =>
     };
   });
 
+/**
+ * Create the midi data from the timed note events
+ * 
+ * @param {*} notes 
+ * @returns 
+ */  
 export function generateFileData(notes) {
+
   const midi = new Midi();
   const track = midi.addTrack();
 
