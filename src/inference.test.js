@@ -73,11 +73,11 @@ expect.extend({
             }
             if (received[i].pitchMidi !== argument[i].pitchMidi ||
                 Math.abs(received[i].amplitude - argument[i].amplitude) >
-                    atol + rtol * Math.abs(received[i].amplitude) ||
+                atol + rtol * Math.abs(received[i].amplitude) ||
                 Math.abs(received[i].durationSeconds - argument[i].durationSeconds) >
-                    atol + rtol * Math.abs(received[i].durationSeconds) ||
+                atol + rtol * Math.abs(received[i].durationSeconds) ||
                 Math.abs(received[i].startTimeSeconds - argument[i].startTimeSeconds) >
-                    atol + rtol * Math.abs(received[i].startTimeSeconds)) {
+                atol + rtol * Math.abs(received[i].startTimeSeconds)) {
                 return {
                     pass: false,
                     message: () => `Expected all midi elements in ${JSON.stringify(received.slice(Math.max(0, i - 5), Math.min(received.length - 1, i + 5)), null, '  ')} to be close to ${JSON.stringify(argument.slice(Math.max(0, i - 5), Math.min(argument.length - 1, i + 5)), null, '  ')} ` +
@@ -94,9 +94,11 @@ expect.extend({
 });
 
 test('Can infer a C Major Scale', async () => {
+
     const model = tf.loadGraphModel(`file://${__dirname}/../model/model.json`);
     const wavBuffer = fs.readFileSync(`${__dirname}/../test_data/C_major.resampled.mp3`);
     const audioCtx = new AudioContext();
+    
     let audioBuffer = undefined;
     audioCtx.decodeAudioData(wavBuffer, async (_audioBuffer) => {
         audioBuffer = _audioBuffer;
@@ -108,6 +110,7 @@ test('Can infer a C Major Scale', async () => {
     const onsets = [];
     const contours = [];
     let pct = 0;
+
     const basicPitch = new BasicPitch(model);
     await basicPitch.evaluateModel(audioBuffer, (f, o, c) => {
         frames.push(...f);
@@ -116,11 +119,13 @@ test('Can infer a C Major Scale', async () => {
     }, (p) => {
         pct = p;
     });
+
     expect(pct).toEqual(1);
     const framesForArray = [];
     const onsetsForArray = [];
     const contoursForArray = [];
     pct = 0;
+    
     await basicPitch.evaluateModel(audioBuffer.getChannelData(0), (f, o, c) => {
         framesForArray.push(...f);
         onsetsForArray.push(...o);
@@ -133,13 +138,13 @@ test('Can infer a C Major Scale', async () => {
 
     expect(framesForArray).toEqual(frames);
     expect(onsetsForArray).toEqual(onsets);
-    
+
     expect(contoursForArray).toEqual(contours);
     const poly = noteFramesToTime(addPitchBendsToNoteEvents(contours, outputToNotesPoly(frames, onsets, 0.25, 0.25, 5)));
     const polyNoMelodia = noteFramesToTime(addPitchBendsToNoteEvents(contours, outputToNotesPoly(frames, onsets, 0.5, 0.3, 5, true, null, null, false)));
-    
+
     writeDebugOutput('test_data/poly', poly, polyNoMelodia);
-    
+
     const polyNotes = require('../test_data/poly.json');
     const polyNoMelodiaNotes = require('../test_data/poly.nomelodia.json');
     expect(poly).toBeCloseToMidi(polyNotes, 1e-3, 0);
@@ -162,7 +167,7 @@ test('Can correctly evaluate vocal 80 bpm data', async () => {
     const audioWindowedWindows = vocalDa80bpmData.audio_windowed.length;
     const audioWindowedFrames = vocalDa80bpmData.audio_windowed[0].length;
     const audioWindowedChannels = vocalDa80bpmData.audio_windowed[0][0].length;
-    
+
     expect(preparedDataTensor.shape).toEqual([
         audioWindowedWindows,
         audioWindowedFrames,
@@ -193,27 +198,27 @@ test('Can correctly evaluate vocal 80 bpm data', async () => {
     });
 
     expect(pct).toEqual(1);
-    
+
     expect(frames.length).toStrictEqual(vocalDa80bpmData.unwrapped_output.note.length);
-    
+
     frames.forEach((frame, i) => {
         expect(frame).toAllBeClose(vocalDa80bpmData.unwrapped_output.note[i], 5e-3, 0);
     });
     expect(onsets.length).toStrictEqual(vocalDa80bpmData.unwrapped_output.onset.length);
-    
+
     onsets.forEach((onset, i) => {
         expect(onset).toAllBeClose(vocalDa80bpmData.unwrapped_output.onset[i], 5e-3, 0);
     });
     expect(contours.length).toStrictEqual(vocalDa80bpmData.unwrapped_output.contour.length);
-    
+
     contours.forEach((contour, i) => {
         expect(contour).toAllBeClose(vocalDa80bpmData.unwrapped_output.contour[i], 5e-3, 0);
     });
 
     const poly = noteFramesToTime(addPitchBendsToNoteEvents(contours, outputToNotesPoly(frames, onsets, vocalDa80bpmData.onset_thresh, vocalDa80bpmData.frame_thresh, vocalDa80bpmData.min_note_length)));
-    
+
     const polyNoMelodia = noteFramesToTime(addPitchBendsToNoteEvents(contours, outputToNotesPoly(frames, onsets, vocalDa80bpmDataNoMelodia.onset_thresh, vocalDa80bpmDataNoMelodia.frame_thresh, vocalDa80bpmDataNoMelodia.min_note_length, true, null, null, false)));
-    
+
     expect(polyNoMelodia).toBeCloseToMidi(vocalDa80bpmDataNoMelodia.estimated_notes.map(note => {
         return {
             startTimeSeconds: note[0],

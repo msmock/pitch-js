@@ -3,6 +3,7 @@ import fs from "fs";
 
 import { AudioContext } from "web-audio-api";
 import { BasicPitch } from "./inference.js";
+import { Resampler } from "./resampler.js"; 
 
 import {
   addPitchBendsToNoteEvents,
@@ -23,15 +24,18 @@ import * as tfnode from "@tensorflow/tfjs-node";
  * @param {*} noMelodiaNotes
  */
 function writeDebugOutput(name, notes, noMelodiaNotes) {
-  
+
+  // write the JSON files
   fs.writeFileSync(`${name}.json`, JSON.stringify(notes));
   fs.writeFileSync(`${name}.nomelodia.json`, JSON.stringify(noMelodiaNotes));
 
+  // create midi track
   const midi = new Midi();
   const trackWithMelodia = midi.addTrack();
   trackWithMelodia.name = name;
 
   notes.forEach((note) => {
+
     trackWithMelodia.addNote({
       midi: note.pitchMidi,
       duration: note.durationSeconds,
@@ -55,12 +59,14 @@ function writeDebugOutput(name, notes, noMelodiaNotes) {
   trackNoMelodia.name = `${name}.nomelodia`;
 
   noMelodiaNotes.forEach((note) => {
+
     trackNoMelodia.addNote({
       midi: note.pitchMidi,
       duration: note.durationSeconds,
       time: note.startTimeSeconds,
       velocity: note.amplitude,
     });
+    
     if (note.pitchBends) {
       note.pitchBends.forEach((b, i) =>
         trackWithMelodia.addPitchBend({
@@ -73,32 +79,35 @@ function writeDebugOutput(name, notes, noMelodiaNotes) {
     }
   });
 
+  // write the midi track
   fs.writeFileSync(`${name}.mid`, midi.toArray());
 }
 
 /**
  *
  */
-async function asyncCall() {
+async function runPitchDetection() {
 
   const modelFile = process.cwd() + "/model/model.json";
-  const fileToPitch = process.cwd()+ "/test_data/C_major.resampled.mp3";
+  const fileToPitch = process.cwd() + "/test_data/take1.wav";
 
   // load the model
   console.log("Load model from file " + modelFile);
   const model = tf.loadGraphModel("file://" + modelFile);
 
   // the auido file to pitch
-  const wavBuffer = fs.readFileSync(fileToPitch);
+  const clip = fs.readFileSync(fileToPitch);
 
-  // r-sample the audio
-  const audioCtx = new AudioContext();
+  // re-sample the audio
+  const audioCtx = new AudioContext({sampleRate: 22050});
+
+  console.log('Sample rate is '+audioCtx.sampleRate); 
 
   let audioBuffer = undefined;
   audioCtx.decodeAudioData(
-    wavBuffer,
-    async (_audioBuffer) => {
-      audioBuffer = _audioBuffer;
+    clip,
+    async (decoded) => {
+      audioBuffer = decoded;
     },
     () => {
       console.log("Error during audio decoding and re-sampling");
@@ -119,6 +128,7 @@ async function asyncCall() {
 
   let pct = 0;
   const basicPitch = new BasicPitch(model);
+
   await basicPitch.evaluateModel(
     audioBuffer,
     (f, o, c) => {
@@ -176,4 +186,4 @@ async function asyncCall() {
 }
 
 // run the test
-asyncCall();
+runPitchDetection();
