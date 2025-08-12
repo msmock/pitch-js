@@ -89,7 +89,7 @@ function writeDebugOutput(name, notes, noMelodiaNotes) {
 async function runPitchDetection() {
 
   const modelFile = process.cwd() + "/model/model.json";
-  const fileToPitch = process.cwd() + "/test_data/take1.wav";
+  const fileToPitch = process.cwd() + "/test_data/vocal-da-80bpm.22050.wav";
 
   // load the model
   console.log("Load model from file " + modelFile);
@@ -99,7 +99,7 @@ async function runPitchDetection() {
   const clip = fs.readFileSync(fileToPitch);
 
   // re-sample the audio
-  const audioCtx = new AudioContext({sampleRate: 22050});
+  const audioCtx = new AudioContext();
 
   console.log('Sample rate is '+audioCtx.sampleRate); 
 
@@ -119,6 +119,9 @@ async function runPitchDetection() {
     await new Promise((r) => setTimeout(r, 1));
   }
 
+  // TODO resample down to 22050
+  let tune = audioBuffer;
+
   console.log("Run Basic Pitch with audio " + fileToPitch);
 
   // run the basic pitch
@@ -130,7 +133,7 @@ async function runPitchDetection() {
   const basicPitch = new BasicPitch(model);
 
   await basicPitch.evaluateModel(
-    audioBuffer,
+    tune,
     (f, o, c) => {
       frames.push(...f);
       onsets.push(...o);
