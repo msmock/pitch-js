@@ -1,6 +1,6 @@
 {
   "extends": "@spotify/web-scripts/config/tsconfig.json",
-  "include": ["src"],
+  "include": ["src", "test/myTest.js", "test/inference.test.js", "test/toMidi.test.js"],
   "compilerOptions": {
     "skipLibCheck": true,
     "target": "es2017",
