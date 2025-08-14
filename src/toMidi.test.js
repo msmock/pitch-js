@@ -1,7 +1,7 @@
-import '../src/matchers';
+import './matchers';
 import * as tf from '@tensorflow/tfjs-node';
 import { Midi } from '@tonejs/midi';
-import { generateFileData, testables } from '../src/toMidi';
+import { generateFileData, testables } from './toMidi';
 
 test('hzToMidi understands what 440Hz is', () => {
     expect(testables.hzToMidi(440)).toBe(69);

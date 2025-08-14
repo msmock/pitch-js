@@ -3,14 +3,14 @@ import load from 'audio-loader';
 import fs from 'fs';
 
 import { AudioBuffer, AudioContext } from 'web-audio-api';
-import { BasicPitch } from '../src/inference';
+import { BasicPitch } from './inference';
 
-import { addPitchBendsToNoteEvents, noteFramesToTime, outputToNotesPoly, } from '../src/toMidi';
+import { addPitchBendsToNoteEvents, noteFramesToTime, outputToNotesPoly, } from './toMidi';
 require('@tensorflow/tfjs-node');
-import '../src/matchers';
+import './matchers';
 
 import { Midi } from '@tonejs/midi';
-import { toAllBeClose } from '../src/matchers';
+import { toAllBeClose } from './matchers';
 
 function writeDebugOutput(name, notes, noMelodiaNotes) {
     fs.writeFileSync(`${name}.json`, JSON.stringify(notes));

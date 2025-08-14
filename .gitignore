@@ -16,7 +16,7 @@ junit.xml
 
 # misc
 .DS_Store
-package-lock.json
+tsconfig.json
 
 npm-debug.log*
 yarn-debug.log*

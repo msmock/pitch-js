@@ -1,12 +1,12 @@
 
 import fs from 'fs';
 import { AudioContext } from 'web-audio-api';
-import { resample } from '../lib/wave-resampler.js';
+import { Resampler } from '../lib/resampler.js';
 
 /**
  *
  */
-async function sampleRateConversion() {
+async function runTest() {
 
   // the auido file to pitch
   const fileToPitch = process.cwd() + '/test/test-input/my-recording.wav';
@@ -26,7 +26,8 @@ async function sampleRateConversion() {
       ', duration ' + audioBuffer.duration + ' and ' + audioBuffer.numberOfChannels + ' channel.');
 
     const rate = 22050;
-    const resampled = resample(audioBuffer.getChannelData(0), audioBuffer.sampleRate, rate);
+    const converter = new Resampler(); 
+    const resampled = converter.resample(audioBuffer.getChannelData(0), audioBuffer.sampleRate, rate);
 
     let outputBuffer = audioCtx.createBuffer(
       audioBuffer.numberOfChannels,
@@ -50,4 +51,4 @@ async function sampleRateConversion() {
 }
 
 // run the test
-sampleRateConversion();
+runTest();
