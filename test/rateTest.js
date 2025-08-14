@@ -46,40 +46,11 @@ async function sampleRateConversion() {
     let outputSampleRate = 22050;
 
     create(nChannels, inputSampleRate, outputSampleRate, {
-      converterType: converterType, // default SRC_SINC_FASTEST. see API for more
+      converterType: converterType,
     }).then((src) => {
 
       let resampled = src.simple(audioBuffer);
       src.destroy(); // clean up
-
-      // interlude test 
-      // createBuffer(numOfChannels, length, sampleRate)
-      let myArrayBuffer = audioCtx.createBuffer(
-        1,
-        22050 * 3, // 3 sekunden dauer
-        22050,
-      );
-
-      for (let channel = 0; channel < myArrayBuffer.numberOfChannels; channel++) {
-        // This gives us the actual array that contains the data
-        const nowBuffering = myArrayBuffer.getChannelData(channel);
-        for (let i = 0; i < myArrayBuffer.length; i++) {
-          nowBuffering[i] = Math.random() * 2 - 1;
-        }
-      }
-
-      console.log("My array buffer sample rate " + myArrayBuffer.sampleRate);
-      console.log("My array buffer duration " + myArrayBuffer.duration);
-      console.log("My array buffer length " + myArrayBuffer.length);
-      console.log("My array buffer channel count " + myArrayBuffer.numberOfChannels);
-
-      // end test 
-
-      // audioCtx.decodeAudioData(resampled, onsuccess, onerror);
-
-      function onerror(e) {
-        console.log("Error during audio decoding. Cause: " + e);
-      }
 
       // function onsuccess(audioBuffer) {
       console.log('resampled audio to sample rate ' + resampled.sampleRate + ', buffer length ' + resampled.length +
