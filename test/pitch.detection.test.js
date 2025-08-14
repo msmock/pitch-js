@@ -10,7 +10,7 @@ import {
   outputToNotesPoly,
 } from "../src/toMidi.js";
 
-import pkg from "@tonejs/midi";
+import pkg from '@tonejs/midi';
 const { Midi } = pkg;
 
 import * as tfnode from "@tensorflow/tfjs-node";

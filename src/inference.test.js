@@ -1,6 +1,6 @@
+import fs from 'fs';
 import * as tf from '@tensorflow/tfjs';
 import load from 'audio-loader';
-import fs from 'fs';
 
 import { AudioBuffer, AudioContext } from 'web-audio-api';
 import { BasicPitch } from './inference';
@@ -13,11 +13,14 @@ import { Midi } from '@tonejs/midi';
 import { toAllBeClose } from './matchers';
 
 function writeDebugOutput(name, notes, noMelodiaNotes) {
+
     fs.writeFileSync(`${name}.json`, JSON.stringify(notes));
     fs.writeFileSync(`${name}.nomelodia.json`, JSON.stringify(noMelodiaNotes));
+
     const midi = new Midi();
     const trackWithMelodia = midi.addTrack();
     trackWithMelodia.name = name;
+
     notes.forEach(note => {
         trackWithMelodia.addNote({
             midi: note.pitchMidi,
@@ -52,6 +55,7 @@ function writeDebugOutput(name, notes, noMelodiaNotes) {
     });
     fs.writeFileSync(`${name}.mid`, midi.toArray());
 }
+
 expect.extend({
     toBeCloseToMidi(received, argument, atol = 1e-3, rtol = 1e-5) {
         for (let i = 0; i < received.length; ++i) {
@@ -96,9 +100,16 @@ expect.extend({
 test('Can infer a C Major Scale', async () => {
 
     const model = tf.loadGraphModel(`file://${__dirname}/../model/model.json`);
-    const wavBuffer = fs.readFileSync(`${__dirname}/../test_data/C_major.resampled.mp3`);
+
+    const audioPath = process.cwd() + '/test/test-input/C_major.resampled.mp3';
+    console.log('read audio file ' + audioPath);
+
+    console.log('filesystem is ' + fs); // TODO filesystem is undefined ?? 
+
+    const wavBuffer = fs.readFileSync(audioPath);
+
     const audioCtx = new AudioContext();
-    
+
     let audioBuffer = undefined;
     audioCtx.decodeAudioData(wavBuffer, async (_audioBuffer) => {
         audioBuffer = _audioBuffer;
@@ -125,7 +136,7 @@ test('Can infer a C Major Scale', async () => {
     const onsetsForArray = [];
     const contoursForArray = [];
     pct = 0;
-    
+
     await basicPitch.evaluateModel(audioBuffer.getChannelData(0), (f, o, c) => {
         framesForArray.push(...f);
         onsetsForArray.push(...o);
@@ -153,17 +164,23 @@ test('Can infer a C Major Scale', async () => {
 
 
 test('Can correctly evaluate vocal 80 bpm data', async () => {
-    const vocalDa80bpmData = require('../test_data/vocal-da-80bpm.json');
-    const vocalDa80bpmDataNoMelodia = require('../test_data/vocal-da-80bpm.nomelodia.json');
-    const wavBuffer = await load(`${__dirname}/../test_data/vocal-da-80bpm.22050.wav`);
+    
+    const vocalDa80bpmData = require( process.cwd() + '/test/test-input/vocal-da-80bpm.json'); // HERE
+    const vocalDa80bpmDataNoMelodia = require( process.cwd() + '/test/test-input/vocal-da-80bpm.nomelodia.json');
+    
+    const wavBuffer = await load( process.cwd() + '/test/test-input/vocal-da-80bpm.22050.wav');
+
     const frames = [];
     const onsets = [];
     const contours = [];
     let pct = 0;
+
     const basicPitch = new BasicPitch(`file://${__dirname}/../model/model.json`);
     const wavData = Array.from(Array(wavBuffer.length).keys()).map(key => wavBuffer._data[key]);
     const audioBuffer = AudioBuffer.fromArray([wavData], 22050);
+    
     const [preparedDataTensor, audioOriginalLength] = await basicPitch.prepareData(audioBuffer.getChannelData(0));
+    
     const audioWindowedWindows = vocalDa80bpmData.audio_windowed.length;
     const audioWindowedFrames = vocalDa80bpmData.audio_windowed[0].length;
     const audioWindowedChannels = vocalDa80bpmData.audio_windowed[0][0].length;

@@ -1,4 +1,4 @@
-import pkg from "@tonejs/midi";
+import pkg from '@tonejs/midi';
 const { Midi } = pkg;
 
 const MIDI_OFFSET = 21;

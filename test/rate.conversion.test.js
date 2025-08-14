@@ -1,4 +1,3 @@
-
 import fs from 'fs';
 import { AudioContext } from 'web-audio-api';
 import { Resampler } from '../lib/resampler.js';
