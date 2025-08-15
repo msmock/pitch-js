@@ -117,6 +117,9 @@ test('Can infer a C Major Scale', async () => {
     while (audioBuffer === undefined) {
         await new Promise(r => setTimeout(r, 1));
     }
+
+    
+
     const frames = [];
     const onsets = [];
     const contours = [];

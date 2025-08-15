@@ -16,6 +16,7 @@ const OVERLAP_LENGTH_FRAMES = N_OVERLAPPING_FRAMES * FFT_HOP;
 const HOP_SIZE = AUDIO_N_SAMPLES - OVERLAP_LENGTH_FRAMES;
 
 export class BasicPitch {
+
     constructor(modelOrModelPath) {
         if (OVERLAP_LENGTH_FRAMES % 2 !== 0) {
             throw new Error(`OVERLAP_LENGTH_FRAMES is not divisible by 2! Is ${OVERLAP_LENGTH_FRAMES}`);
@@ -25,6 +26,7 @@ export class BasicPitch {
                 ? tf.loadGraphModel(modelOrModelPath)
                 : modelOrModelPath;
     }
+    
     adjustNoteStart(notes, offsetSeconds) {
         return notes.map((note) => ({
             startTimeSeconds: note.startTimeSeconds + offsetSeconds,
@@ -34,6 +36,7 @@ export class BasicPitch {
             pitchBends: note.pitchBends,
         }));
     }
+    
     async evaluateSingleFrame(reshapedInput, batchNumber) {
         const model = await this.model;
         const singleBatch = tf.slice(reshapedInput, batchNumber, 1);
@@ -44,41 +47,50 @@ export class BasicPitch {
         ]);
         return [results[0], results[1], results[2]];
     }
-    async prepareData(singleChannelAudioData) {
+    
+    async prepareData(audioData) {
         const wavSamples = tf.concat1d([
             tf.zeros([Math.floor(OVERLAP_LENGTH_FRAMES / 2)], 'float32'),
-            tf.tensor(singleChannelAudioData),
+            tf.tensor(audioData),
         ]);
         return [
             tf.expandDims(tf.signal.frame(wavSamples, AUDIO_N_SAMPLES, HOP_SIZE, true, 0), -1),
-            singleChannelAudioData.length,
+            audioData.length,
         ];
     }
+    
     unwrapOutput(result) {
         let rawOutput = result;
         rawOutput = result.slice([0, N_OVERLAP_OVER_2, 0], [-1, result.shape[1] - 2 * N_OVERLAP_OVER_2, -1]);
         const outputShape = rawOutput.shape;
         return rawOutput.reshape([outputShape[0] * outputShape[1], outputShape[2]]);
     }
-    async evaluateModel(resampledBuffer, onComplete, percentCallback) {
-        let singleChannelAudioData;
-        if (resampledBuffer instanceof Float32Array) {
-            singleChannelAudioData = resampledBuffer;
+    
+    async evaluateModel(audioBuffer, onComplete, percentCallback) {
+
+        let audioData;
+        
+        if (audioBuffer instanceof Float32Array) {
+            audioData = audioBuffer;
         }
+
         else {
-            if (resampledBuffer.sampleRate !== AUDIO_SAMPLE_RATE) {
+            if (audioBuffer.sampleRate !== AUDIO_SAMPLE_RATE) {
                 throw new Error(`Input audio buffer is not at correct sample rate! ` +
-                    `Is ${resampledBuffer.sampleRate}. Should be ${AUDIO_SAMPLE_RATE}`);
+                    `Is ${audioBuffer.sampleRate}. Should be ${AUDIO_SAMPLE_RATE}`);
             }
-            if (resampledBuffer.numberOfChannels !== NUM_CHANNELS) {
+            if (audioBuffer.numberOfChannels !== NUM_CHANNELS) {
                 throw new Error(`Input audio buffer is not mono! ` +
-                    `Number of channels is ${resampledBuffer.numberOfChannels}. Should be ${NUM_CHANNELS}`);
+                    `Number of channels is ${audioBuffer.numberOfChannels}. Should be ${NUM_CHANNELS}`);
             }
-            singleChannelAudioData = resampledBuffer.getChannelData(0);
+            audioData = audioBuffer.getChannelData(0);
         }
-        const [reshapedInput, audioOriginalLength] = await this.prepareData(singleChannelAudioData);
+
+        const [reshapedInput, audioOriginalLength] = await this.prepareData(audioData);
         const nOutputFramesOriginal = Math.floor(audioOriginalLength * (ANNOTATIONS_FPS / AUDIO_SAMPLE_RATE));
+        
         let calculatedFrames = 0;
+
         for (let i = 0; i < reshapedInput.shape[0]; ++i) {
             percentCallback(i / reshapedInput.shape[0]);
             const [resultingFrames, resultingOnsets, resultingContours] = await this.evaluateSingleFrame(reshapedInput, i);

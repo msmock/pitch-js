@@ -88,7 +88,7 @@ function writeDebugOutput(namePrefix, notes, noMelodiaNotes) {
 async function runTest() {
 
   const modelFile = process.cwd() + '/model/model.json';
-  const fileToPitch = process.cwd() + '/test/test-input/vocal-da-80bpm.22050.wav';
+  const fileToPitch = process.cwd() + '/test/test-input/C_major.resampled.mp3';
 
   // load the model
   console.log('Load model from file ' + modelFile);
@@ -109,8 +109,9 @@ async function runTest() {
 
     // TODO resample down to 22050
     console.log('Run Basic Pitch with audio ' + fileToPitch);
-    console.log('AudioBuffer has sampleRate ' + audioBuffer.sampleRate + ', ' + audioBuffer.numberOfChannels + ' channel '+'buffer length ' + audioBuffer.length +
-      ', duration ' + audioBuffer.duration + ' and ' + audioBuffer.numberOfChannels + ' channel.');
+    console.log('AudioBuffer has sampleRate ' + audioBuffer.sampleRate + ', ' +
+      audioBuffer.numberOfChannels + ' channel ' + ', buffer length ' + audioBuffer.length +
+      ', duration ' + audioBuffer.duration);
 
     // run the basic pitch
     const frames = []; // frames where a note is active
