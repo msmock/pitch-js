@@ -1,37 +1,37 @@
-import * as tf from "@tensorflow/tfjs";
-import fs from "fs";
+import * as tf from '@tensorflow/tfjs';
+import fs from 'fs';
 
-import { AudioContext } from "web-audio-api";
-import { BasicPitch } from "../src/inference.js";
+import { AudioContext } from 'web-audio-api';
+import { BasicPitch } from '../src/inference.js';
 
 import {
   addPitchBendsToNoteEvents,
   noteFramesToTime,
   outputToNotesPoly,
-} from "../src/toMidi.js";
+} from '../src/toMidi.js';
 
 import pkg from '@tonejs/midi';
 const { Midi } = pkg;
 
-import * as tfnode from "@tensorflow/tfjs-node";
+import * as tfnode from '@tensorflow/tfjs-node';
 
 /**
  * Write the pitch detection results to file as json and midi
  *
- * @param {*} name the filename
+ * @param {*} namePrefix the filename prefix
  * @param {*} notes
  * @param {*} noMelodiaNotes
  */
-function writeDebugOutput(name, notes, noMelodiaNotes) {
+function writeDebugOutput(namePrefix, notes, noMelodiaNotes) {
 
   // write the JSON files
-  fs.writeFileSync(`${name}.json`, JSON.stringify(notes));
-  fs.writeFileSync(`${name}.nomelodia.json`, JSON.stringify(noMelodiaNotes));
+  fs.writeFileSync(`${namePrefix}.json`, JSON.stringify(notes));
+  fs.writeFileSync(`${namePrefix}.nomelodia.json`, JSON.stringify(noMelodiaNotes));
 
   // create midi track
   const midi = new Midi();
   const trackWithMelodia = midi.addTrack();
-  trackWithMelodia.name = name;
+  trackWithMelodia.name = namePrefix;
 
   notes.forEach((note) => {
 
@@ -55,7 +55,7 @@ function writeDebugOutput(name, notes, noMelodiaNotes) {
   });
 
   const trackNoMelodia = midi.addTrack();
-  trackNoMelodia.name = `${name}.nomelodia`;
+  trackNoMelodia.name = `${namePrefix}.nomelodia`;
 
   noMelodiaNotes.forEach((note) => {
 
@@ -65,7 +65,7 @@ function writeDebugOutput(name, notes, noMelodiaNotes) {
       time: note.startTimeSeconds,
       velocity: note.amplitude,
     });
-    
+
     if (note.pitchBends) {
       note.pitchBends.forEach((b, i) =>
         trackWithMelodia.addPitchBend({
@@ -79,46 +79,38 @@ function writeDebugOutput(name, notes, noMelodiaNotes) {
   });
 
   // write the midi track
-  fs.writeFileSync(`${name}.mid`, midi.toArray());
+  fs.writeFileSync(`${namePrefix}.mid`, midi.toArray());
 }
 
 /**
  *
  */
-async function runPitchDetection() {
+async function runTest() {
 
-  const modelFile = process.cwd() + "/model/model.json";
-  const fileToPitch = process.cwd() + "/test/test-input/vocal-da-80bpm.22050.wav";
+  const modelFile = process.cwd() + '/model/model.json';
+  const fileToPitch = process.cwd() + '/test/test-input/vocal-da-80bpm.22050.wav';
 
   // load the model
-  console.log("Load model from file " + modelFile);
-  const model = tf.loadGraphModel("file://" + modelFile);
+  console.log('Load model from file ' + modelFile);
+  const model = tf.loadGraphModel('file://' + modelFile);
 
   // the auido file to pitch
   const clip = fs.readFileSync(fileToPitch);
 
-  // re-sample the audio
+  // decode the audio file
   const audioCtx = new AudioContext();
+  audioCtx.decodeAudioData(clip, whenDecoded, () => console.log('Error during decoding of ' + fileToPitch));
 
-  console.log('AudioContext sample rate is '+audioCtx.sampleRate); 
-
-  let audioBuffer = undefined;
-  audioCtx.decodeAudioData(
-    clip,
-    async (decoded) => {
-      newFunction(decoded);
-    },
-    () => {
-      console.log("Error during audio decoding and re-sampling");
-    }
-  );
-
-  async function newFunction(audioBuffer) {
+  /**
+   * 
+   * @param {*} audioBuffer 
+   */
+  async function whenDecoded(audioBuffer) {
 
     // TODO resample down to 22050
-    let tune = audioBuffer;
-
-    console.log("Run Basic Pitch with audio " + fileToPitch);
+    console.log('Run Basic Pitch with audio ' + fileToPitch);
+    console.log('AudioBuffer has sampleRate ' + audioBuffer.sampleRate + ', ' + audioBuffer.numberOfChannels + ' channel '+'buffer length ' + audioBuffer.length +
+      ', duration ' + audioBuffer.duration + ' and ' + audioBuffer.numberOfChannels + ' channel.');
 
     // run the basic pitch
     const frames = []; // frames where a note is active
@@ -129,7 +121,7 @@ async function runPitchDetection() {
     const basicPitch = new BasicPitch(model);
 
     await basicPitch.evaluateModel(
-      tune,
+      audioBuffer,
       (f, o, c) => {
         frames.push(...f);
         onsets.push(...o);
@@ -140,7 +132,7 @@ async function runPitchDetection() {
       }
     );
 
-    console.log("pct is = " + pct);
+    console.log('pct is = ' + pct);
 
     const onsetThresh = 0.25;
     const frameThresh = 0.25;
@@ -158,6 +150,7 @@ async function runPitchDetection() {
     const maxFreq = null;
     const minFreq = null;
     const melodiaTrick = false;
+
     // const energyTolerance not used
     const polyNoMelodia = noteFramesToTime(
       addPitchBendsToNoteEvents(
@@ -177,12 +170,12 @@ async function runPitchDetection() {
     );
 
     // write json output
-    const jsonOutputFile = process.cwd() + "/test/test-output/pith.detection.test";
+    const jsonOutputFile = process.cwd() + '/test/test-output/pith.detection.test';
     writeDebugOutput(jsonOutputFile, poly, polyNoMelodia);
 
-    console.log("Finished pitch detection of file " + fileToPitch);
+    console.log('Finished pitch detection of file ' + fileToPitch);
   }
 }
 
 // run the test
-runPitchDetection();
+runTest();
