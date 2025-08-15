@@ -13,6 +13,8 @@ import {
 import pkg from '@tonejs/midi';
 const { Midi } = pkg;
 
+import { Resampler } from '../lib/resampler.js';
+
 import * as tfnode from '@tensorflow/tfjs-node';
 
 /**
@@ -22,7 +24,7 @@ import * as tfnode from '@tensorflow/tfjs-node';
  * @param {*} notes
  * @param {*} noMelodiaNotes
  */
-function writeDebugOutput(namePrefix, notes, noMelodiaNotes) {
+function writeOutputData(namePrefix, notes, noMelodiaNotes) {
 
   // write the JSON files
   fs.writeFileSync(`${namePrefix}.json`, JSON.stringify(notes));
@@ -83,12 +85,46 @@ function writeDebugOutput(namePrefix, notes, noMelodiaNotes) {
 }
 
 /**
- *
+ * resample the audio to rate, required by pitch detection (22050)
+ * 
+ * @param {*} audioBuffer 
+ * @param {*} audioCtx 
+ * @returns resampled AudioBuffer 
+ */
+function resample(audioBuffer, audioCtx) {
+
+  const rate = 22050;
+  const converter = new Resampler();
+  const resampled = converter.resample(audioBuffer.getChannelData(0), audioBuffer.sampleRate, rate);
+
+  let outputBuffer = audioCtx.createBuffer(
+    audioBuffer.numberOfChannels,
+    resampled.length, // size (sampleRate * duration in sec)
+    rate
+  );
+
+  // fill the audio buffer channel with white noise
+  for (let channel = 0; channel < outputBuffer.numberOfChannels; channel++) {
+    const channelData = outputBuffer.getChannelData(channel);
+    for (let i = 0; i < outputBuffer.length; i++) {
+      channelData[i] = resampled[i];
+    }
+  };
+
+  console.log('resampled audio to sample rate ' + outputBuffer.sampleRate + ', buffer length ' + outputBuffer.length +
+    ', duration ' + outputBuffer.duration + ' and ' + outputBuffer.numberOfChannels + ' channel.');
+
+  audioBuffer = outputBuffer;
+  return audioBuffer;
+}
+
+/**
+ * TODO: the C_maj.resampled.mp3 provides the tempo, while we loose the tempo, when C_maj.mp3 is resampled here
  */
 async function runTest() {
 
   const modelFile = process.cwd() + '/model/model.json';
-  const fileToPitch = process.cwd() + '/test/test-input/C_major.resampled.mp3';
+  const fileToPitch = process.cwd() + '/test/test-input/C_major.mp3';
 
   // load the model
   console.log('Load model from file ' + modelFile);
@@ -102,18 +138,19 @@ async function runTest() {
   audioCtx.decodeAudioData(clip, whenDecoded, () => console.log('Error during decoding of ' + fileToPitch));
 
   /**
-   * 
    * @param {*} audioBuffer 
    */
   async function whenDecoded(audioBuffer) {
 
-    // TODO resample down to 22050
     console.log('Run Basic Pitch with audio ' + fileToPitch);
     console.log('AudioBuffer has sampleRate ' + audioBuffer.sampleRate + ', ' +
       audioBuffer.numberOfChannels + ' channel ' + ', buffer length ' + audioBuffer.length +
       ', duration ' + audioBuffer.duration);
 
-    // run the basic pitch
+    // resample the audio file to rate 22050  
+    audioBuffer = resample(audioBuffer, audioCtx);
+
+    // run the basic pitch detection
     const frames = []; // frames where a note is active
     const onsets = []; // the first few frames of every note
     const contours = []; // the estimated phrases (of a voice)
@@ -133,13 +170,11 @@ async function runTest() {
       }
     );
 
-    console.log('pct is = ' + pct);
-
     const onsetThresh = 0.25;
     const frameThresh = 0.25;
     const minNoteLength = 5;
 
-    //
+    // convert to note events with pitch, time and
     const poly = noteFramesToTime(
       addPitchBendsToNoteEvents(
         contours,
@@ -172,7 +207,7 @@ async function runTest() {
 
     // write json output
     const jsonOutputFile = process.cwd() + '/test/test-output/pith.detection.test';
-    writeDebugOutput(jsonOutputFile, poly, polyNoMelodia);
+    writeOutputData(jsonOutputFile, poly, polyNoMelodia);
 
     console.log('Finished pitch detection of file ' + fileToPitch);
   }
@@ -180,3 +215,4 @@ async function runTest() {
 
 // run the test
 runTest();
+
