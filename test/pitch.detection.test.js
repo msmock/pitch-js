@@ -106,87 +106,82 @@ async function runPitchDetection() {
   audioCtx.decodeAudioData(
     clip,
     async (decoded) => {
-      audioBuffer = decoded;
+      newFunction(decoded);
     },
     () => {
       console.log("Error during audio decoding and re-sampling");
     }
   );
 
-  // wait until all is done
-  while (audioBuffer === undefined) {
-    await new Promise((r) => setTimeout(r, 1));
-  }
+  async function newFunction(audioBuffer) {
 
-  // TODO resample down to 22050
-  let tune = audioBuffer;
+    // TODO resample down to 22050
+    let tune = audioBuffer;
 
-  console.log("Run Basic Pitch with audio " + fileToPitch);
+    console.log("Run Basic Pitch with audio " + fileToPitch);
 
-  // run the basic pitch
-  const frames = []; // frames where a note is active
-  const onsets = []; // the first few frames of every note
-  const contours = []; // the estimated phrases (of a voice)
+    // run the basic pitch
+    const frames = []; // frames where a note is active
+    const onsets = []; // the first few frames of every note
+    const contours = []; // the estimated phrases (of a voice)
 
-  let pct = 0;
-  const basicPitch = new BasicPitch(model);
+    let pct = 0;
+    const basicPitch = new BasicPitch(model);
 
-  await basicPitch.evaluateModel(
-    tune,
-    (f, o, c) => {
-      frames.push(...f);
-      onsets.push(...o);
-      contours.push(...c);
-    },
-    (p) => {
-      pct = p;
-    }
-  );
+    await basicPitch.evaluateModel(
+      tune,
+      (f, o, c) => {
+        frames.push(...f);
+        onsets.push(...o);
+        contours.push(...c);
+      },
+      (p) => {
+        pct = p;
+      }
+    );
 
-  console.log("pct is = " + pct);
+    console.log("pct is = " + pct);
 
-  const onsetThresh = 0.25;
-  const frameThresh = 0.25;
-  const minNoteLength = 5;
+    const onsetThresh = 0.25;
+    const frameThresh = 0.25;
+    const minNoteLength = 5;
 
-  //
-  const poly = noteFramesToTime(
-    addPitchBendsToNoteEvents(
-      contours,
-      outputToNotesPoly(frames, onsets, onsetThresh, frameThresh, minNoteLength)
-    )
-  );
-
-  const inferOnsets = true;
-  const maxFreq = null;
-  const minFreq = null;
-  const melodiaTrick = false;
-  // const energyTolerance not used
-
-  const polyNoMelodia = noteFramesToTime(
-    addPitchBendsToNoteEvents(
-      contours,
-      outputToNotesPoly(
-        frames,
-        onsets,
-        onsetThresh,
-        frameThresh,
-        minNoteLength,
-        inferOnsets,
-        maxFreq,
-        minFreq,
-        melodiaTrick
+    //
+    const poly = noteFramesToTime(
+      addPitchBendsToNoteEvents(
+        contours,
+        outputToNotesPoly(frames, onsets, onsetThresh, frameThresh, minNoteLength)
       )
-    )
-  );
+    );
 
-  // write json output
-  const jsonOutputFile = process.cwd() + "/test/test-output/myTestPoly";
-  writeDebugOutput(jsonOutputFile, poly, polyNoMelodia);
+    const inferOnsets = true;
+    const maxFreq = null;
+    const minFreq = null;
+    const melodiaTrick = false;
+    // const energyTolerance not used
+    const polyNoMelodia = noteFramesToTime(
+      addPitchBendsToNoteEvents(
+        contours,
+        outputToNotesPoly(
+          frames,
+          onsets,
+          onsetThresh,
+          frameThresh,
+          minNoteLength,
+          inferOnsets,
+          maxFreq,
+          minFreq,
+          melodiaTrick
+        )
+      )
+    );
 
-  console.log("Finished pitch detection of file " + fileToPitch);
+    // write json output
+    const jsonOutputFile = process.cwd() + "/test/test-output/pith.detection.test";
+    writeDebugOutput(jsonOutputFile, poly, polyNoMelodia);
 
-  
+    console.log("Finished pitch detection of file " + fileToPitch);
+  }
 }
 
 // run the test
