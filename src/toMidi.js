@@ -198,7 +198,7 @@ function getInferredOnsets(onsets, frames, nDiff = 2) {
  * @param {*} config.framesonsets as returned from BasicPitch
  * @param {*} config.onsetThresh
  * @param {*} config.frameThresh
- * @param {*} config.minNoteLen 
+ * @param {*} config.minNoteLen TODO: does not work properly 
  * @param {*} config.inferOnsets
  * @param {*} config.maxFreq
  * @param {*} config.minFreq
@@ -253,7 +253,9 @@ export function outputToNotesPoly(frames, onsets, config) {
 
   const noteEvents = noteStarts
     .map((noteStartIdx, idx) => {
+
       const freqIdx = freqIdxs[idx];
+
       if (noteStartIdx >= nFrames - 1) {
         return null;
       }
@@ -262,17 +264,20 @@ export function outputToNotesPoly(frames, onsets, config) {
       let k = 0;
 
       while (i < nFrames - 1 && k < config.energyTolerance) {
+
         if (remainingEnergy[i][freqIdx] < inferredFrameThresh) {
           k += 1;
         } else {
           k = 0;
         }
         i += 1;
-      }
+      } // end while
+
       i -= k;
       if (i - noteStartIdx <= config.minNoteLen) {
         return null;
       }
+
       for (let j = noteStartIdx; j < i; ++j) {
         remainingEnergy[j][freqIdx] = 0;
         if (freqIdx < MAX_FREQ_IDX) {
@@ -282,6 +287,7 @@ export function outputToNotesPoly(frames, onsets, config) {
           remainingEnergy[j][freqIdx - 1] = 0;
         }
       }
+
       const amplitude =
         frames
           .slice(noteStartIdx, i)
@@ -298,7 +304,9 @@ export function outputToNotesPoly(frames, onsets, config) {
     })
     .filter(isNotNull);
 
+
   if (config.melodiaTrick === true) {
+
     while (globalMax(remainingEnergy) > inferredFrameThresh) {
       const [iMid, freqIdx] = remainingEnergy.reduce(
         (prevCoord, currRow, rowIdx) => {
@@ -310,9 +318,11 @@ export function outputToNotesPoly(frames, onsets, config) {
         },
         [0, 0]
       );
+
       remainingEnergy[iMid][freqIdx] = 0;
       let i = iMid + 1;
       let k = 0;
+
       while (i < nFrames - 1 && k < config.energyTolerance) {
         if (remainingEnergy[i][freqIdx] < inferredFrameThresh) {
           k += 1;
@@ -327,16 +337,19 @@ export function outputToNotesPoly(frames, onsets, config) {
           remainingEnergy[i][freqIdx - 1] = 0;
         }
         i += 1;
-      }
+      } // end while 
+
       const iEnd = i - 1 - k;
       i = iMid - 1;
       k = 0;
       while (i > 0 && k < config.energyTolerance) {
+
         if (remainingEnergy[i][freqIdx] < inferredFrameThresh) {
           k += 1;
         } else {
           k = 0;
         }
+
         remainingEnergy[i][freqIdx] = 0;
         if (freqIdx < MAX_FREQ_IDX) {
           remainingEnergy[i][freqIdx + 1] = 0;
@@ -346,27 +359,32 @@ export function outputToNotesPoly(frames, onsets, config) {
         }
         i -= 1;
       }
+
       const iStart = i + 1 + k;
       if (iStart < 0) {
         throw new Error(`iStart is not positive! value: ${iStart}`);
       }
+
       if (iEnd >= nFrames) {
         throw new Error(
           `iEnd is past end of times. (iEnd, times.length): (${iEnd}, ${nFrames})`
         );
       }
+
       const amplitude =
         frames.slice(iStart, iEnd).reduce((sum, row) => sum + row[freqIdx], 0) /
         (iEnd - iStart);
-      if (iEnd - iStart <= config.minNoteLen) {
-        continue;
-      }
-      noteEvents.push({
-        startFrame: iStart,
-        durationFrames: iEnd - iStart,
-        pitchMidi: freqIdx + MIDI_OFFSET,
-        amplitude: amplitude,
-      });
+
+      if (iEnd - iStart <= config.minNoteLen)
+        continue; 
+
+        noteEvents.push({
+          startFrame: iStart,
+          durationFrames: iEnd - iStart,
+          pitchMidi: freqIdx + MIDI_OFFSET,
+          amplitude: amplitude,
+        });
+
     }
   }
   return noteEvents;

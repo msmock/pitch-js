@@ -210,14 +210,14 @@ async function runTest() {
 
     // TODO: tune the settings for jazz guitar
     let config = {
-      onsetThresh: 0.5,
-      frameThresh: 0.25,
-      minNoteLength: 5,
+      onsetThresh: 0.6, // was 0.5
+      frameThresh: 0.4,
+      minNoteLength: 80,
       inferOnsets: true,
       maxFreq: 1000,
       minFreq: 80,
       melodiaTrick: true,
-      energyTolerance: 11,
+      energyTolerance: 20, // was 11
     }
 
     /**
