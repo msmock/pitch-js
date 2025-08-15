@@ -212,6 +212,7 @@ function getInferredOnsets(onsets, frames, nDiff = 2) {
     amplitude: float number
   }
  * 
+ * TODO: make a config object
  */
 export function outputToNotesPoly(
   frames,
@@ -225,6 +226,7 @@ export function outputToNotesPoly(
   melodiaTrick = true,
   energyTolerance = 11
 ) {
+  
   let inferredFrameThresh = frameThresh;
   if (inferredFrameThresh === null) {
     const [mean, std] = meanStdDev(frames);

@@ -174,24 +174,36 @@ async function runTest() {
       }
     );
 
-    const onsetThresh = 0.25;
-    const frameThresh = 0.25;
-    const minNoteLength = 5;
+    // TODO: tune the settings for jazz guitar
+    let onsetThresh = 0.25;
+    let frameThresh = 0.25;
+    let minNoteLength = 5;
+    let inferOnsets = true;
+    let maxFreq = 1000;
+    let minFreq = 80;
+    let melodiaTrick = true;
 
     // convert to note events with pitch, time and
     const poly = noteFramesToTime(
       addPitchBendsToNoteEvents(
         contours,
-        outputToNotesPoly(frames, onsets, onsetThresh, frameThresh, minNoteLength)
+        outputToNotesPoly(
+          frames,
+          onsets,
+          onsetThresh,
+          frameThresh,
+          minNoteLength,
+          inferOnsets,
+          maxFreq,
+          minFreq,
+          melodiaTrick
+        )
       )
     );
 
-    const inferOnsets = true;
-    const maxFreq = null;
-    const minFreq = null;
-    const melodiaTrick = false;
+    // nomelodia
+    melodiaTrick = false;
 
-    // const energyTolerance not used
     const polyNoMelodia = noteFramesToTime(
       addPitchBendsToNoteEvents(
         contours,
