@@ -18,6 +18,33 @@ import { Resampler } from '../lib/resampler.js';
 import * as tfnode from '@tensorflow/tfjs-node';
 
 /**
+ * 
+ * @param {*} note 
+ * @returns 
+ */
+function midiToPitch(note) {
+
+  const midiNote = note.pitchMidi;
+
+  const noteMapping = [
+    'C', 'C#', 'D', 'D#', 'E', 'F',
+    'F#', 'G', 'G#', 'A', 'A#', 'B'
+  ];
+  const octave = Math.floor(midiNote / 12) - 1;
+  const noteIndex = midiNote % 12;
+
+  return noteMapping[noteIndex] + octave.toString();
+};
+
+function compare(note1, note2) {
+  if (note1.startTimeSeconds < note2.startTimeSeconds)
+    return -1;
+  if (note1.startTimeSeconds > note2.startTimeSeconds)
+    return 1;
+  return 0;
+};
+
+/**
  * Write the pitch detection results to file as json and midi
  *
  * @param {*} namePrefix the filename prefix
@@ -26,8 +53,15 @@ import * as tfnode from '@tensorflow/tfjs-node';
  */
 function writeOutputData(namePrefix, notes, noMelodiaNotes) {
 
-  // write the JSON files
+  // add the note pitch value, sort and export 
+  notes.forEach((element) => {
+    element.pitch = midiToPitch(element);
+    element.pitchBends = [];  
+  });
+  notes.sort(compare);
   fs.writeFileSync(`${namePrefix}.json`, JSON.stringify(notes));
+
+  // add the note pitch value, sort and export 
   fs.writeFileSync(`${namePrefix}.nomelodia.json`, JSON.stringify(noMelodiaNotes));
 
   // create midi track
@@ -80,7 +114,8 @@ function writeOutputData(namePrefix, notes, noMelodiaNotes) {
             value: b,
           })
         );
-      }
+      };
+
     });
   }
 
@@ -128,7 +163,7 @@ function resample(audioBuffer, audioCtx) {
 async function runTest() {
 
   const modelFile = process.cwd() + '/model/model.json';
-  const fileToPitch = process.cwd() + '/test/test-input/guitar-lick.wav';
+  const fileToPitch = process.cwd() + '/test/test-input/guitar-arpeggio.mp3';
 
   // load the model
   console.log('Load model from file ' + modelFile);
@@ -183,42 +218,60 @@ async function runTest() {
     let minFreq = 80;
     let melodiaTrick = true;
 
-    // convert to note events with pitch, time and
-    const poly = noteFramesToTime(
-      addPitchBendsToNoteEvents(
-        contours,
-        outputToNotesPoly(
-          frames,
-          onsets,
-          onsetThresh,
-          frameThresh,
-          minNoteLength,
-          inferOnsets,
-          maxFreq,
-          minFreq,
-          melodiaTrick
-        )
-      )
+    /**
+     * 
+     */
+    const melodiaNoteEvents = outputToNotesPoly(
+      frames,
+      onsets,
+      onsetThresh,
+      frameThresh,
+      minNoteLength,
+      inferOnsets,
+      maxFreq,
+      minFreq,
+      melodiaTrick
     );
+
+    /**
+     * the extracted melodia notes
+     */
+    const melodiaNotesAndBends = addPitchBendsToNoteEvents(
+      contours,
+      melodiaNoteEvents
+    );
+
+    /**
+     * convert to note events with pitch, time and bends
+     */
+    const poly = noteFramesToTime(
+      melodiaNotesAndBends
+    );
+
+    // ------- nomelodia ---------
 
     // nomelodia
     melodiaTrick = false;
 
-    const polyNoMelodia = noteFramesToTime(
-      addPitchBendsToNoteEvents(
-        contours,
-        outputToNotesPoly(
-          frames,
-          onsets,
-          onsetThresh,
-          frameThresh,
-          minNoteLength,
-          inferOnsets,
-          maxFreq,
-          minFreq,
-          melodiaTrick
-        )
+    // the extracted nomelodia notes 
+    const noMelodiaNotesAndBends = addPitchBendsToNoteEvents(
+      contours,
+      outputToNotesPoly(
+        frames,
+        onsets,
+        onsetThresh,
+        frameThresh,
+        minNoteLength,
+        inferOnsets,
+        maxFreq,
+        minFreq,
+        melodiaTrick
       )
+    )
+
+    // convert to note events with pitch, time and bends
+    const polyNoMelodia = noteFramesToTime(
+      noMelodiaNotesAndBends
     );
 
     // write json output
