@@ -36,11 +36,10 @@ function midiToPitch(note) {
   return noteMapping[noteIndex] + octave.toString();
 };
 
+// used to sort notes
 function compare(note1, note2) {
-  if (note1.startTimeSeconds < note2.startTimeSeconds)
-    return -1;
-  if (note1.startTimeSeconds > note2.startTimeSeconds)
-    return 1;
+  if (note1.startTimeSeconds < note2.startTimeSeconds) return -1;
+  if (note1.startTimeSeconds > note2.startTimeSeconds) return 1;
   return 0;
 };
 
@@ -56,7 +55,7 @@ function writeOutputData(namePrefix, notes, noMelodiaNotes) {
   // add the note pitch value, sort and export 
   notes.forEach((element) => {
     element.pitch = midiToPitch(element);
-    element.pitchBends = [];  
+    element.pitchBends = [];
   });
   notes.sort(compare);
   fs.writeFileSync(`${namePrefix}.json`, JSON.stringify(notes));
@@ -210,64 +209,48 @@ async function runTest() {
     );
 
     // TODO: tune the settings for jazz guitar
-    let onsetThresh = 0.25;
-    let frameThresh = 0.25;
-    let minNoteLength = 5;
-    let inferOnsets = true;
-    let maxFreq = 1000;
-    let minFreq = 80;
-    let melodiaTrick = true;
+    let config = {
+      onsetThresh: 0.5,
+      frameThresh: 0.25,
+      minNoteLength: 5,
+      inferOnsets: true,
+      maxFreq: 1000,
+      minFreq: 80,
+      melodiaTrick: true,
+      energyTolerance: 11,
+    }
 
     /**
      * 
      */
-    const melodiaNoteEvents = outputToNotesPoly(
-      frames,
-      onsets,
-      onsetThresh,
-      frameThresh,
-      minNoteLength,
-      inferOnsets,
-      maxFreq,
-      minFreq,
-      melodiaTrick
-    );
+    const melodiaNoteEvents = outputToNotesPoly(frames, onsets, config);
 
     /**
      * the extracted melodia notes
      */
-    const melodiaNotesAndBends = addPitchBendsToNoteEvents(
-      contours,
-      melodiaNoteEvents
-    );
+    const melodiaNotesAndBends = addPitchBendsToNoteEvents(contours, melodiaNoteEvents);
 
     /**
      * convert to note events with pitch, time and bends
      */
-    const poly = noteFramesToTime(
-      melodiaNotesAndBends
-    );
+    const poly = noteFramesToTime(melodiaNotesAndBends);
 
     // ------- nomelodia ---------
 
     // nomelodia
-    melodiaTrick = false;
+    config = {
+      onsetThresh: 0.25,
+      frameThresh: 0.25,
+      minNoteLength: 5,
+      inferOnsets: true,
+      maxFreq: 1000,
+      minFreq: 80,
+      melodiaTrick: false,
+      energyTolerance: 11,
+    }
 
     // the extracted nomelodia notes 
-    const noMelodiaNotesAndBends = addPitchBendsToNoteEvents(
-      contours,
-      outputToNotesPoly(
-        frames,
-        onsets,
-        onsetThresh,
-        frameThresh,
-        minNoteLength,
-        inferOnsets,
-        maxFreq,
-        minFreq,
-        melodiaTrick
-      )
-    )
+    const noMelodiaNotesAndBends = addPitchBendsToNoteEvents(contours, outputToNotesPoly(frames, onsets, config));
 
     // convert to note events with pitch, time and bends
     const polyNoMelodia = noteFramesToTime(

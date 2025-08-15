@@ -21,6 +21,7 @@ const ANNOTATIONS_N_SEMITONES = 88;
 
 const N_FREQ_BINS_CONTOURS =
   ANNOTATIONS_N_SEMITONES * CONTOURS_BINS_PER_SEMITONE;
+
 const hzToMidi = (hz) => 12 * (Math.log2(hz) - Math.log2(440.0)) + 69;
 const midiToHz = (midi) => 440.0 * 2.0 ** ((midi - 69.0) / 12.0);
 
@@ -38,15 +39,15 @@ const modelFrameToTime = (frame) =>
  * 
  * @param {*} arr 
  * @returns 
- */  
+ */
 function argMax(arr) {
   return arr.length === 0
     ? null
     : arr.reduce(
-        (maxIndex, currentValue, index) =>
-          arr[maxIndex] > currentValue ? maxIndex : index,
-        -1
-      );
+      (maxIndex, currentValue, index) =>
+        arr[maxIndex] > currentValue ? maxIndex : index,
+      -1
+    );
 }
 
 const argMaxAxis1 = (arr) => arr.map((row) => argMax(row));
@@ -158,6 +159,7 @@ function constrainFrequency(onsets, frames, maxFreq, minFreq) {
 }
 
 function getInferredOnsets(onsets, frames, nDiff = 2) {
+
   const diffs = Array.from(Array(nDiff).keys())
     .map((n) => n + 1)
     .map((n) => {
@@ -188,56 +190,49 @@ function getInferredOnsets(onsets, frames, nDiff = 2) {
   return max3dForAxis0([onsets, frameDiff]);
 }
 
+
 /**
  * Convert the onsets and frames as returend by BasicPitch to note events
  * 
- * @param {*} frames as returned from BasicPitch
- * @param {*} onsets as returned from BasicPitch
- * @param {*} onsetThresh
- * @param {*} frameThresh
- * @param {*} minNoteLen 
- * @param {*} inferOnsets
- * @param {*} maxFreq
- * @param {*} minFreq
- * @param {*} melodiaTrick
- * @param {*} energyTolerance
+ * @param {*} config.frames as returned from BasicPitch
+ * @param {*} config.framesonsets as returned from BasicPitch
+ * @param {*} config.onsetThresh
+ * @param {*} config.frameThresh
+ * @param {*} config.minNoteLen 
+ * @param {*} config.inferOnsets
+ * @param {*} config.maxFreq
+ * @param {*} config.minFreq
+ * @param {*} config.melodiaTrick
+ * @param {*} config.energyTolerance
  *
  * @returns an array of note events objects
  * 
- * Note Event: 
-  {
-    startFrame: int number,
-    durationFrames: int number (iEnd - iStart),
-    pitchMidi: int number,
-    amplitude: float number
-  }
- * 
- * TODO: make a config object
  */
-export function outputToNotesPoly(
-  frames,
-  onsets,
-  onsetThresh = 0.5,
-  frameThresh = 0.3,
-  minNoteLen = 5,
-  inferOnsets = true,
-  maxFreq = null,
-  minFreq = null,
-  melodiaTrick = true,
-  energyTolerance = 11
-) {
-  
-  let inferredFrameThresh = frameThresh;
+export function outputToNotesPoly(frames, onsets, config) {
+
+  /** 
+  default values: 
+    onsetThresh = 0.5,
+    frameThresh = 0.3,
+    minNoteLen = 5,
+    inferOnsets = true,
+    maxFreq = null,
+    minFreq = null,
+    melodiaTrick = true,
+    energyTolerance = 11
+  */
+
+  let inferredFrameThresh = config.frameThresh;
   if (inferredFrameThresh === null) {
     const [mean, std] = meanStdDev(frames);
     inferredFrameThresh = mean + std;
   }
 
   const nFrames = frames.length;
-  constrainFrequency(onsets, frames, maxFreq, minFreq);
+  constrainFrequency(onsets, frames, config.maxFreq, config.minFreq);
 
   let inferredOnsets = onsets;
-  if (inferOnsets) {
+  if (config.inferOnsets) {
     inferredOnsets = getInferredOnsets(onsets, frames);
   }
 
@@ -248,7 +243,7 @@ export function outputToNotesPoly(
 
   const [noteStarts, freqIdxs] = whereGreaterThanAxis1(
     peakThresholdMatrix,
-    onsetThresh
+    config.onsetThresh
   );
 
   noteStarts.reverse();
@@ -266,7 +261,7 @@ export function outputToNotesPoly(
       let i = noteStartIdx + 1;
       let k = 0;
 
-      while (i < nFrames - 1 && k < energyTolerance) {
+      while (i < nFrames - 1 && k < config.energyTolerance) {
         if (remainingEnergy[i][freqIdx] < inferredFrameThresh) {
           k += 1;
         } else {
@@ -275,7 +270,7 @@ export function outputToNotesPoly(
         i += 1;
       }
       i -= k;
-      if (i - noteStartIdx <= minNoteLen) {
+      if (i - noteStartIdx <= config.minNoteLen) {
         return null;
       }
       for (let j = noteStartIdx; j < i; ++j) {
@@ -303,7 +298,7 @@ export function outputToNotesPoly(
     })
     .filter(isNotNull);
 
-  if (melodiaTrick === true) {
+  if (config.melodiaTrick === true) {
     while (globalMax(remainingEnergy) > inferredFrameThresh) {
       const [iMid, freqIdx] = remainingEnergy.reduce(
         (prevCoord, currRow, rowIdx) => {
@@ -318,7 +313,7 @@ export function outputToNotesPoly(
       remainingEnergy[iMid][freqIdx] = 0;
       let i = iMid + 1;
       let k = 0;
-      while (i < nFrames - 1 && k < energyTolerance) {
+      while (i < nFrames - 1 && k < config.energyTolerance) {
         if (remainingEnergy[i][freqIdx] < inferredFrameThresh) {
           k += 1;
         } else {
@@ -336,7 +331,7 @@ export function outputToNotesPoly(
       const iEnd = i - 1 - k;
       i = iMid - 1;
       k = 0;
-      while (i > 0 && k < energyTolerance) {
+      while (i > 0 && k < config.energyTolerance) {
         if (remainingEnergy[i][freqIdx] < inferredFrameThresh) {
           k += 1;
         } else {
@@ -363,7 +358,7 @@ export function outputToNotesPoly(
       const amplitude =
         frames.slice(iStart, iEnd).reduce((sum, row) => sum + row[freqIdx], 0) /
         (iEnd - iStart);
-      if (iEnd - iStart <= minNoteLen) {
+      if (iEnd - iStart <= config.minNoteLen) {
         continue;
       }
       noteEvents.push({
@@ -395,7 +390,7 @@ const gaussian = (M, std) =>
  * @param {*} pitchMidi number of the midi pitch
  * 
  * @returns 
- */  
+ */
 const midiPitchToContourBin = (pitchMidi) =>
   12.0 *
   CONTOURS_BINS_PER_SEMITONE *
@@ -408,7 +403,7 @@ const midiPitchToContourBin = (pitchMidi) =>
  * @param {*} nBinsTolerance ?
  * 
  * @returns 
- */  
+ */
 export function addPitchBendsToNoteEvents(
   contours,
   notes,
@@ -418,7 +413,7 @@ export function addPitchBendsToNoteEvents(
   const freqGaussian = gaussian(windowLength, 5);
 
   return notes.map((note) => {
-    
+
     const freqIdx = Math.floor(
       Math.round(midiPitchToContourBin(note.pitchMidi))
     );
@@ -432,7 +427,7 @@ export function addPitchBendsToNoteEvents(
     const freqGuassianSubMatrix = freqGaussian.slice(
       Math.max(0, nBinsTolerance - freqIdx),
       windowLength -
-        Math.max(0, freqIdx - (N_FREQ_BINS_CONTOURS - nBinsTolerance - 1))
+      Math.max(0, freqIdx - (N_FREQ_BINS_CONTOURS - nBinsTolerance - 1))
     );
 
     const pitchBendSubmatrix = contours
@@ -483,7 +478,7 @@ export const noteFramesToTime = (notes) =>
  * 
  * @param {*} notes 
  * @returns 
- */  
+ */
 export function generateFileData(notes) {
 
   const midi = new Midi();
