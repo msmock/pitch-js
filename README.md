@@ -1,8 +1,12 @@
+# pitch-js
 This fork is a plain javascript version of the original typescript library `basic-pitch-ts` with additional comments, api and tests. Its intended to be used in a jazz guitar training tool. 
 
 Basic Pitch is a Typescript library for Automatic Music Transcription (AMT), using lightweight neural network developed by [Spotify's Audio Intelligence Lab](https://research.atspotify.com/audio-intelligence/).
 
 Provide a compatible audio file and basic-pitch will generate a MIDI file, complete with pitch bends. Basic pitch is instrument-agnostic and supports polyphonic instruments, so you can freely enjoy transcription of all your favorite music. Basic pitch works best on one instrument at a time.
+
+Note: 
+- this fork is still under construction and currently not fully operational.  
 
 ## Usage
 TODO: Update
@@ -22,15 +26,9 @@ TODO: Update
 - `.flac`
 
 **Mono Channel Audio Only**
-
-While you may use stereo audio as an input to our model, at prediction time, the channels of the input will be down-mixed to mono, and then analyzed and transcribed.
-
-**File Size/Audio Length**
-
-The model can process any size or length of audio, but processing of larger/longer audio files could be limited by your machine's available disk space. To process these files, we recommend streaming the audio of the file, processing windows of audio at a time.
+Input audio files must be mono with one single channel of sample rate 22050. 
 
 ## Copyright and License
-
 The original typescript library `basic-pitch-ts` is Copyright 2022 Spotify AB.
 
 This software is licensed under the Apache License, Version 2.0 (the "Apache License"). You may choose either license to govern your use of this software only upon the condition that you accept all of the terms of either the Apache License.
