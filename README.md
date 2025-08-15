@@ -5,11 +5,9 @@ Basic Pitch is a Typescript library for Automatic Music Transcription (AMT), usi
 Provide a compatible audio file and basic-pitch will generate a MIDI file, complete with pitch bends. Basic pitch is instrument-agnostic and supports polyphonic instruments, so you can freely enjoy transcription of all your favorite music. Basic pitch works best on one instrument at a time.
 
 ## Usage
-
 TODO: Update
 
 ### Scripts
-
 - npm run test: Run all tests
 
 ### Model Input
@@ -42,3 +40,4 @@ You may obtain a copy of the Apache License at:
 http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software distributed under the Apache License or the GPL License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Apache License for the specific language governing permissions and limitations under the Apache License.
+

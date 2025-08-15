@@ -185,6 +185,8 @@ async function runPitchDetection() {
   writeDebugOutput(jsonOutputFile, poly, polyNoMelodia);
 
   console.log("Finished pitch detection of file " + fileToPitch);
+
+  
 }
 
 // run the test
