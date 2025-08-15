@@ -56,29 +56,33 @@ function writeOutputData(namePrefix, notes, noMelodiaNotes) {
     }
   });
 
-  const trackNoMelodia = midi.addTrack();
-  trackNoMelodia.name = `${namePrefix}.nomelodia`;
+  const nomelodia = false;
+  if (nomelodia) {
 
-  noMelodiaNotes.forEach((note) => {
+    const trackNoMelodia = midi.addTrack();
+    trackNoMelodia.name = `${namePrefix}.nomelodia`;
 
-    trackNoMelodia.addNote({
-      midi: note.pitchMidi,
-      duration: note.durationSeconds,
-      time: note.startTimeSeconds,
-      velocity: note.amplitude,
+    noMelodiaNotes.forEach((note) => {
+
+      trackNoMelodia.addNote({
+        midi: note.pitchMidi,
+        duration: note.durationSeconds,
+        time: note.startTimeSeconds,
+        velocity: note.amplitude,
+      });
+
+      if (note.pitchBends) {
+        note.pitchBends.forEach((b, i) =>
+          trackWithMelodia.addPitchBend({
+            time:
+              note.startTimeSeconds +
+              (note.durationSeconds * i) / note.pitchBends.length,
+            value: b,
+          })
+        );
+      }
     });
-
-    if (note.pitchBends) {
-      note.pitchBends.forEach((b, i) =>
-        trackWithMelodia.addPitchBend({
-          time:
-            note.startTimeSeconds +
-            (note.durationSeconds * i) / note.pitchBends.length,
-          value: b,
-        })
-      );
-    }
-  });
+  }
 
   // write the midi track
   fs.writeFileSync(`${namePrefix}.mid`, midi.toArray());
@@ -124,7 +128,7 @@ function resample(audioBuffer, audioCtx) {
 async function runTest() {
 
   const modelFile = process.cwd() + '/model/model.json';
-  const fileToPitch = process.cwd() + '/test/test-input/C_major.mp3';
+  const fileToPitch = process.cwd() + '/test/test-input/guitar-lick.wav';
 
   // load the model
   console.log('Load model from file ' + modelFile);
@@ -206,7 +210,7 @@ async function runTest() {
     );
 
     // write json output
-    const jsonOutputFile = process.cwd() + '/test/test-output/pith.detection.test';
+    const jsonOutputFile = process.cwd() + '/test/test-output/pitch.detection.test';
     writeOutputData(jsonOutputFile, poly, polyNoMelodia);
 
     console.log('Finished pitch detection of file ' + fileToPitch);
