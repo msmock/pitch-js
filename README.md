@@ -1,31 +1,32 @@
 # pitch-js
-This fork is a plain javascript version of the original typescript library `basic-pitch-ts` with additional comments, api and tests. Its intended to be used in a jazz guitar training tool. 
-
-Basic Pitch is a Typescript library for Automatic Music Transcription (AMT), using lightweight neural network developed by [Spotify's Audio Intelligence Lab](https://research.atspotify.com/audio-intelligence/).
-
-Provide a compatible audio file and basic-pitch will generate a MIDI file, complete with pitch bends. Basic pitch is instrument-agnostic and supports polyphonic instruments, so you can freely enjoy transcription of all your favorite music. Basic pitch works best on one instrument at a time.
 
 Note: 
-- this fork is still under construction and currently not fully operational.  
+- this fork is still under construction and currently not fully operational.
+
+This fork is a plain javascript version of the original typescript library `basic-pitch-ts` with additional comments, api and tests. It is intended to be used in a jazz guitar training tool I'm currently working on. 
+
+The original Basic Pitch is a typescript library for Automatic Music Transcription (AMT), using lightweight neural network developed by [Spotify's Audio Intelligence Lab](https://research.atspotify.com/audio-intelligence/). Basic pitch is instrument-agnostic and supports polyphonic instruments, so you can freely enjoy transcription of all your favorite music. Basic pitch works best on one instrument at a time.
+
+Like the original code, pitch-js will run a pitch detection of an audio buffer, which can be analyzed and may be exported as MIDI file. 
 
 ## Usage
-TODO: Update
+Under developement. 
 
 ### Scripts
-- npm run test: Run all tests
+Under development
 
 ### Model Input
 
 **Supported Audio Codecs**
 
-`basic-pitch` accepts all sound files that are compatible with [AudioBuffer](https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer) including:
+The pitch detection accepts all sound files that are compatible with [AudioBuffer](https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer) including:
 
 - `.mp3`
 - `.ogg`
 - `.wav`
 - `.flac`
 
-**Mono Channel Audio Only**
+**Limitations**
 Input audio files must be mono with one single channel of sample rate 22050. 
 
 ## Copyright and License
