@@ -3,59 +3,44 @@ import * as tf from '@tensorflow/tfjs-node';
 import midipkg from '@tonejs/midi';
 const { Midi } = midipkg;
 
-import {
-    argRelMax,
-    argMax,
-    argMaxAxis1,
-    whereGreaterThanAxis1,
-    meanStdDev,
-    getInferredOnsets,
-    constrainFrequency,
-    modelFrameToTime,
-    hzToMidi,
-    generateFileData,
-    noteFramesToTime,
-    midiPitchToContourBin,
-    midiToHz,
-} from '../src/toMidi.js';
+import { ToMidiExporter } from '../src/to.midi.exporter.js';
 
 import assert from 'assert';
 
-//------------------ the tests ------------------
-
 let testdata;
+let toMidi = new ToMidiExporter(); 
 
-assert.deepEqual(hzToMidi(440), 69, 'hzToMidi should understands what 440Hz is');
+assert.deepEqual(toMidi.hzToMidi(440), 69, 'hzToMidi should understands what 440Hz is');
 
-assert.deepEqual(midiToHz(69), 440, 'midiToHz understands what 69 is');
+assert.deepEqual(toMidi.midiToHz(69), 440, 'midiToHz understands what 69 is');
 
-assert.deepEqual(midiPitchToContourBin(69), 144, 'midiPitchToContourBin should be able to convert 69');
+assert.deepEqual(toMidi.midiPitchToContourBin(69), 144, 'midiPitchToContourBin should be able to convert 69');
 
 testdata = [[0, 0], [1, 0.0116], [2, 0.0232]];
 testdata.forEach((data) => {
     // console.log(data[0] + ' ' + data[1]);
-    assert.deepEqual(modelFrameToTime(data[0]).toFixed(4), data[1], 'modelFrameToTime returns correct times');
+    assert.deepEqual(toMidi.modelFrameToTime(data[0]).toFixed(4), data[1], 'modelFrameToTime returns correct times');
 });
 
 
 testdata = [[[], null], [[1, 2, -1], 1],];
 testdata.forEach((data) => {
     // console.log(data[0] + ' ' + data[1]);
-    assert.deepEqual(argMax(data[0]), data[1], 'argMax handles to handle empty and nonempty inputs correctly');
+    assert.deepEqual(toMidi.argMax(data[0]), data[1], 'argMax handles to handle empty and nonempty inputs correctly');
 });
 
 testdata = [[10, 11, 12], [13, 14, 15]];
-assert.deepEqual(argMaxAxis1(testdata), [2, 2], 'argMaxAxis1 returns the correct indices');
+assert.deepEqual(toMidi.argMaxAxis1(testdata), [2, 2], 'argMaxAxis1 returns the correct indices');
 
 testdata = [[1, 2], [3, 4]];
-const [X, Y] = whereGreaterThanAxis1(testdata, 1);
+const [X, Y] = toMidi.whereGreaterThanAxis1(testdata, 1);
 assert.deepEqual(X, [0, 1, 1], 'whereGreaterThanAxis1 should return all elements greater than threshold');
 assert.deepEqual(Y, [1, 0, 1], 'whereGreaterThanAxis1 should return all elements greater than threshold');
 
 
 const expectedMean = 2;
 const expectedStd = 2;
-const [mean, std] = meanStdDev(tf
+const [mean, std] = toMidi.meanStdDev(tf
     .randomNormal([1000, 1000], expectedMean, expectedStd, 'float32')
     .arraySync());
 
@@ -64,7 +49,7 @@ assert.deepEqual(std.toFixed(2), 2, 'meanStdDev should return a mean and standar
 
 
 const generatedMidiData = new Midi(
-    generateFileData([
+    toMidi.generateFileData([
         {
             startTimeSeconds: 1,
             durationSeconds: 2,
@@ -125,18 +110,18 @@ const expectedMidiData = {
     ],
 };
 
-console.log('header actual/expected'); 
-console.log(generatedMidiData.toJSON().header); 
-console.log(expectedMidiData.header); 
+console.log('header actual/expected');
+console.log(generatedMidiData.toJSON().header);
+console.log(expectedMidiData.header);
 
-console.log('tracks actual/expected'); 
-console.log(generatedMidiData.toJSON().tracks); 
-console.log(expectedMidiData.tracks); 
+console.log('tracks actual/expected');
+console.log(generatedMidiData.toJSON().tracks);
+console.log(expectedMidiData.tracks);
 
-console.log('track notes actual/expected'); 
-console.log(generatedMidiData.toJSON().tracks[0].notes); 
-console.log(expectedMidiData.tracks[0].notes); 
+console.log('track notes actual/expected');
+console.log(generatedMidiData.toJSON().tracks[0].notes);
+console.log(expectedMidiData.tracks[0].notes);
 
-assert.deepEqual(generatedMidiData.toJSON(), expectedMidiData, 'generated midi data should match the expected data'); 
+assert.deepEqual(generatedMidiData.toJSON(), expectedMidiData, 'generated midi data should match the expected data');
 
 console.log('sucesss: all asserts are fulfilled');

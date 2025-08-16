@@ -7,11 +7,7 @@ import { ConvertToWav } from '../lib/convert2wav.js';
 import { AudioContext } from 'web-audio-api';
 import { BasicPitch } from '../src/inference.js';
 
-import {
-  addPitchBendsToNoteEvents,
-  noteFramesToTime,
-  outputToNotesPoly,
-} from '../src/toMidi.js';
+import { ToMidiExporter } from '../src/to.midi.exporter.js';
 
 import pkg from '@tonejs/midi';
 const { Midi } = pkg;
@@ -227,14 +223,16 @@ async function runTest() {
       energyTolerance: 20, // was 11
     }
 
+    const midiExport = new ToMidiExporter(); 
+
     // convert the onsets and frames as returend by BasicPitch to note events
-    const melodiaNoteEvents = outputToNotesPoly(frames, onsets, config);
+    const melodiaNoteEvents = midiExport.outputToNotesPoly(frames, onsets, config);
 
     // the extracted melodia notes
-    const melodiaNotesAndBends = addPitchBendsToNoteEvents(contours, melodiaNoteEvents);
+    const melodiaNotesAndBends = midiExport.addPitchBendsToNoteEvents(contours, melodiaNoteEvents);
 
     // convert to note events with pitch, time and bends
-    const poly = noteFramesToTime(melodiaNotesAndBends);
+    const poly = midiExport.noteFramesToTime(melodiaNotesAndBends);
     
 
     // ------- nomelodia ---------
@@ -252,10 +250,10 @@ async function runTest() {
     }
 
     // the extracted nomelodia notes 
-    const noMelodiaNotesAndBends = addPitchBendsToNoteEvents(contours, outputToNotesPoly(frames, onsets, config));
+    const noMelodiaNotesAndBends = midiExport.addPitchBendsToNoteEvents(contours, midiExport.outputToNotesPoly(frames, onsets, config));
 
     // convert to note events with pitch, time and bends
-    const polyNoMelodia = noteFramesToTime(
+    const polyNoMelodia = midiExport.noteFramesToTime(
       noMelodiaNotesAndBends
     );
 
