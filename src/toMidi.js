@@ -14,6 +14,7 @@ const AUDIO_N_SAMPLES = AUDIO_SAMPLE_RATE * AUDIO_WINDOW_LENGTH - FFT_HOP;
 const WINDOW_OFFSET =
   (FFT_HOP / AUDIO_SAMPLE_RATE) * (ANNOT_N_FRAMES - AUDIO_N_SAMPLES / FFT_HOP) +
   0.0018;
+
 const MAX_FREQ_IDX = 87;
 const CONTOURS_BINS_PER_SEMITONE = 3;
 const ANNOTATIONS_BASE_FREQUENCY = 27.5;
@@ -23,9 +24,14 @@ const N_FREQ_BINS_CONTOURS =
   ANNOTATIONS_N_SEMITONES * CONTOURS_BINS_PER_SEMITONE;
 
 
-export  const hzToMidi = (hz) => 12 * (Math.log2(hz) - Math.log2(440.0)) + 69;
 
-export const midiToHz = (midi) => 440.0 * 2.0 ** ((midi - 69.0) / 12.0);
+export function hzToMidi(hz) {
+  return 12 * (Math.log2(hz) - Math.log2(440.0)) + 69;
+}
+
+export function midiToHz(midi) {
+  return 440.0 * 2.0 ** ((midi - 69.0) / 12.0);
+}
 
 /**
  * convert the frame index to time in seconds
@@ -33,10 +39,9 @@ export const midiToHz = (midi) => 440.0 * 2.0 ** ((midi - 69.0) / 12.0);
  * @param {} frame 
  * @returns the time in seconds
  */
-export const modelFrameToTime = (frame) =>
-  (frame * FFT_HOP) / AUDIO_SAMPLE_RATE -
-  WINDOW_OFFSET * Math.floor(frame / ANNOT_N_FRAMES);
-
+export function modelFrameToTime(frame) {
+  return (frame * FFT_HOP) / AUDIO_SAMPLE_RATE - WINDOW_OFFSET * Math.floor(frame / ANNOT_N_FRAMES);
+}
 /**
  * 
  * @param {*} arr 
@@ -52,7 +57,9 @@ export function argMax(arr) {
     );
 }
 
-export const argMaxAxis1 = (arr) => arr.map((row) => argMax(row));
+export function argMaxAxis1(arr) {
+  return arr.map((row) => argMax(row));
+}
 
 export function whereGreaterThanAxis1(arr2d, threshold) {
   const outputX = [];
@@ -379,14 +386,14 @@ export function outputToNotesPoly(frames, onsets, config) {
         (iEnd - iStart);
 
       if (iEnd - iStart <= config.minNoteLen)
-        continue; 
+        continue;
 
-        noteEvents.push({
-          startFrame: iStart,
-          durationFrames: iEnd - iStart,
-          pitchMidi: freqIdx + MIDI_OFFSET,
-          amplitude: amplitude,
-        });
+      noteEvents.push({
+        startFrame: iStart,
+        durationFrames: iEnd - iStart,
+        pitchMidi: freqIdx + MIDI_OFFSET,
+        amplitude: amplitude,
+      });
 
     }
   }
@@ -401,10 +408,11 @@ export function outputToNotesPoly(frames, onsets, config) {
  * 
  * @returns an array of a gaussian distribution 
  */
-export const gaussian = (M, std) =>
+export function gaussian(M, std) {
   Array.from(Array(M).keys()).map((n) =>
     Math.exp((-1 * (n - (M - 1) / 2) ** 2) / (2 * std ** 2))
   );
+}
 
 /**
  * 
@@ -488,9 +496,7 @@ export const noteFramesToTime = (notes) =>
       amplitude: note.amplitude,
       pitchBends: note.pitchBends,
       startTimeSeconds: modelFrameToTime(note.startFrame),
-      durationSeconds:
-        modelFrameToTime(note.startFrame + note.durationFrames) -
-        modelFrameToTime(note.startFrame),
+      durationSeconds: modelFrameToTime(note.startFrame + note.durationFrames) - modelFrameToTime(note.startFrame),
     };
   });
 
@@ -526,23 +532,3 @@ export function generateFileData(notes) {
   });
   return Buffer.from(midi.toArray());
 }
-
-export const testables = {
-  argRelMax: argRelMax,
-  argMax: argMax,
-  argMaxAxis1: argMaxAxis1,
-  whereGreaterThanAxis1: whereGreaterThanAxis1,
-  meanStdDev: meanStdDev,
-  globalMax: globalMax,
-  min3dForAxis0: min3dForAxis0,
-  max3dForAxis0: max3dForAxis0,
-  getInferredOnsets: getInferredOnsets,
-  constrainFrequency: constrainFrequency,
-  modelFrameToTime: modelFrameToTime,
-  hzToMidi: hzToMidi,
-  generateFileData: generateFileData,
-  noteFramesToTime: noteFramesToTime,
-  gaussian: gaussian,
-  midiPitchToContourBin: midiPitchToContourBin,
-  midiToHz: midiToHz,
-};
