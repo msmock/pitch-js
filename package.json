@@ -1,13 +1,14 @@
 {
-  "name": "@spotify/basic-pitch",
-  "version": "0.0.0-development",
-  "description": "A JS module that takes audio and converts it to MIDI",
-  "main": "src/index.js",
+  "name": "pitch-js",
+  "version": "0.5.0-development",
+  "description": "A javascript module that takes audio and converts it to MIDI",
+  "main": "not yet defined",
   "license": "Apache-2.0",
   "type": "module",
   "files": [
     "src",
-    "model"
+    "model", 
+    "lib"
   ],
   "scripts": {
     "test": ""
