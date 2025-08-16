@@ -3,12 +3,15 @@ import * as tf from '@tensorflow/tfjs-node';
 import midipkg from '@tonejs/midi';
 const { Midi } = midipkg;
 
-import { ToMidiExporter } from '../src/to.midi.exporter.js';
+import { MidiExporter } from '../src/midi.exporter.js';
 
 import assert from 'assert';
 
 let testdata;
-let toMidi = new ToMidiExporter(); 
+
+// construct with midi instrument 24 (Acoustic Guitar (nylon)) and tempo 120
+let toMidi = new MidiExporter(10, 142, [4, 4]);
+
 
 assert.deepEqual(toMidi.hzToMidi(440), 69, 'hzToMidi should understands what 440Hz is');
 
@@ -21,7 +24,6 @@ testdata.forEach((data) => {
     // console.log(data[0] + ' ' + data[1]);
     assert.deepEqual(toMidi.modelFrameToTime(data[0]).toFixed(4), data[1], 'modelFrameToTime returns correct times');
 });
-
 
 testdata = [[[], null], [[1, 2, -1], 1],];
 testdata.forEach((data) => {
@@ -37,7 +39,6 @@ const [X, Y] = toMidi.whereGreaterThanAxis1(testdata, 1);
 assert.deepEqual(X, [0, 1, 1], 'whereGreaterThanAxis1 should return all elements greater than threshold');
 assert.deepEqual(Y, [1, 0, 1], 'whereGreaterThanAxis1 should return all elements greater than threshold');
 
-
 const expectedMean = 2;
 const expectedStd = 2;
 const [mean, std] = toMidi.meanStdDev(tf
@@ -49,7 +50,8 @@ assert.deepEqual(std.toFixed(2), 2, 'meanStdDev should return a mean and standar
 
 
 const generatedMidiData = new Midi(
-    toMidi.generateFileData([
+
+    toMidi.generateMidi([
         {
             startTimeSeconds: 1,
             durationSeconds: 2,
@@ -71,8 +73,8 @@ const expectedMidiData = {
         meta: [],
         name: '',
         ppq: 480,
-        tempos: [],
-        timeSignatures: [],
+        tempos: [{ bpm: 120, ticks: 0 }],
+        timeSignatures: [{ ticks: 0, timeSignature: [4, 4], measures: 0 }],
     },
     tracks: [
         {
@@ -80,9 +82,9 @@ const expectedMidiData = {
             controlChanges: {},
             pitchBends: [],
             instrument: {
-                family: 'piano',
-                number: 0,
-                name: 'acoustic grand piano',
+                family: 'guitar',
+                number: 24,
+                name: 'acoustic guitar (nylon)'
             },
             name: '',
             notes: [
@@ -110,6 +112,7 @@ const expectedMidiData = {
     ],
 };
 
+/**
 console.log('header actual/expected');
 console.log(generatedMidiData.toJSON().header);
 console.log(expectedMidiData.header);
@@ -121,6 +124,7 @@ console.log(expectedMidiData.tracks);
 console.log('track notes actual/expected');
 console.log(generatedMidiData.toJSON().tracks[0].notes);
 console.log(expectedMidiData.tracks[0].notes);
+*/
 
 assert.deepEqual(generatedMidiData.toJSON(), expectedMidiData, 'generated midi data should match the expected data');
 

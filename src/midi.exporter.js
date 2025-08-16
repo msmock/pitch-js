@@ -1,6 +1,8 @@
 import pkg from '@tonejs/midi';
 const { Midi } = pkg;
 
+import { isBoxedPrimitive } from 'util/types';
+
 const MIDI_OFFSET = 21;
 const AUDIO_SAMPLE_RATE = 22050;
 const AUDIO_WINDOW_LENGTH = 2;
@@ -23,7 +25,14 @@ const N_FREQ_BINS_CONTOURS = ANNOTATIONS_N_SEMITONES * CONTOURS_BINS_PER_SEMITON
 /**
  * 
  */
-export class ToMidiExporter {
+export class MidiExporter {
+
+  constructor(instrument, bpm, timeSignature) {
+    this.instrument = instrument;
+    this.bpm = bpm;
+    this.timeSignature = timeSignature; 
+
+  }
 
   hzToMidi(hz) {
     return 12 * (Math.log2(hz) - Math.log2(440.0)) + 69;
@@ -499,13 +508,23 @@ export class ToMidiExporter {
   /**
    * Create the midi data from the timed note events
    * 
+   * see https://github.com/Tonejs/Midi/tree/master/test
+   * 
    * @param {*} notes 
    * @returns 
    */
-  generateFileData(notes) {
+  generateMidi(notes) {
 
     const midi = new Midi();
+    midi.header.setTempo(this.bpm); 
+    midi.header.timeSignatures.push({
+				ticks: 0,
+				timeSignature: this.timeSignature,
+			});
+
     const track = midi.addTrack();
+
+    track.instrument.number = this.instrument;
 
     notes.forEach((note) => {
       track.addNote({

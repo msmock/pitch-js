@@ -7,10 +7,10 @@ import { ConvertToWav } from '../lib/convert2wav.js';
 import { AudioContext } from 'web-audio-api';
 import { BasicPitch } from '../src/inference.js';
 
-import { ToMidiExporter } from '../src/to.midi.exporter.js';
-
 import pkg from '@tonejs/midi';
 const { Midi } = pkg;
+
+import { MidiExporter } from '../src/midi.exporter.js';
 
 import * as tfnode from '@tensorflow/tfjs-node';
 
@@ -223,7 +223,8 @@ async function runTest() {
       energyTolerance: 20, // was 11
     }
 
-    const midiExport = new ToMidiExporter(); 
+    // instrument is guitar, bpm, 4/4
+    const midiExport = new MidiExporter(24, 120, [4, 4]); 
 
     // convert the onsets and frames as returend by BasicPitch to note events
     const melodiaNoteEvents = midiExport.outputToNotesPoly(frames, onsets, config);
