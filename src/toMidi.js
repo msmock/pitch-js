@@ -22,8 +22,10 @@ const ANNOTATIONS_N_SEMITONES = 88;
 const N_FREQ_BINS_CONTOURS =
   ANNOTATIONS_N_SEMITONES * CONTOURS_BINS_PER_SEMITONE;
 
-const hzToMidi = (hz) => 12 * (Math.log2(hz) - Math.log2(440.0)) + 69;
-const midiToHz = (midi) => 440.0 * 2.0 ** ((midi - 69.0) / 12.0);
+
+export  const hzToMidi = (hz) => 12 * (Math.log2(hz) - Math.log2(440.0)) + 69;
+
+export const midiToHz = (midi) => 440.0 * 2.0 ** ((midi - 69.0) / 12.0);
 
 /**
  * convert the frame index to time in seconds
@@ -31,7 +33,7 @@ const midiToHz = (midi) => 440.0 * 2.0 ** ((midi - 69.0) / 12.0);
  * @param {} frame 
  * @returns the time in seconds
  */
-const modelFrameToTime = (frame) =>
+export const modelFrameToTime = (frame) =>
   (frame * FFT_HOP) / AUDIO_SAMPLE_RATE -
   WINDOW_OFFSET * Math.floor(frame / ANNOT_N_FRAMES);
 
@@ -40,7 +42,7 @@ const modelFrameToTime = (frame) =>
  * @param {*} arr 
  * @returns 
  */
-function argMax(arr) {
+export function argMax(arr) {
   return arr.length === 0
     ? null
     : arr.reduce(
@@ -50,8 +52,9 @@ function argMax(arr) {
     );
 }
 
-const argMaxAxis1 = (arr) => arr.map((row) => argMax(row));
-function whereGreaterThanAxis1(arr2d, threshold) {
+export const argMaxAxis1 = (arr) => arr.map((row) => argMax(row));
+
+export function whereGreaterThanAxis1(arr2d, threshold) {
   const outputX = [];
   const outputY = [];
   for (let i = 0; i < arr2d.length; i++) {
@@ -65,7 +68,7 @@ function whereGreaterThanAxis1(arr2d, threshold) {
   return [outputX, outputY];
 }
 
-function meanStdDev(array) {
+export function meanStdDev(array) {
   const [sum, sumSquared, count] = array.reduce(
     (prev, row) => {
       const [rowSum, rowSumsSquared, rowCount] = row.reduce(
@@ -82,11 +85,11 @@ function meanStdDev(array) {
   return [mean, std];
 }
 
-function globalMax(array) {
+export function globalMax(array) {
   return array.reduce((prev, row) => Math.max(prev, ...row), 0);
 }
 
-function min3dForAxis0(array) {
+export function min3dForAxis0(array) {
   const minArray = array[0].map((v) => v.slice());
   for (let x = 1; x < array.length; ++x) {
     for (let y = 0; y < array[0].length; ++y) {
@@ -98,7 +101,7 @@ function min3dForAxis0(array) {
   return minArray;
 }
 
-function argRelMax(array, order = 1) {
+export function argRelMax(array, order = 1) {
   const result = [];
   for (let col = 0; col < array[0].length; ++col) {
     for (let row = 0; row < array.length; ++row) {
@@ -120,7 +123,7 @@ function argRelMax(array, order = 1) {
   return result;
 }
 
-function max3dForAxis0(array) {
+export function max3dForAxis0(array) {
   const maxArray = array[0].map((v) => v.slice());
   for (let x = 1; x < array.length; ++x) {
     for (let y = 0; y < array[0].length; ++y) {
@@ -132,11 +135,11 @@ function max3dForAxis0(array) {
   return maxArray;
 }
 
-function isNotNull(t) {
+export function isNotNull(t) {
   return t !== null;
 }
 
-function constrainFrequency(onsets, frames, maxFreq, minFreq) {
+export function constrainFrequency(onsets, frames, maxFreq, minFreq) {
   if (maxFreq) {
     const maxFreqIdx = hzToMidi(maxFreq) - MIDI_OFFSET;
     for (let i = 0; i < onsets.length; i++) {
@@ -158,7 +161,7 @@ function constrainFrequency(onsets, frames, maxFreq, minFreq) {
   }
 }
 
-function getInferredOnsets(onsets, frames, nDiff = 2) {
+export function getInferredOnsets(onsets, frames, nDiff = 2) {
 
   const diffs = Array.from(Array(nDiff).keys())
     .map((n) => n + 1)
@@ -398,7 +401,7 @@ export function outputToNotesPoly(frames, onsets, config) {
  * 
  * @returns an array of a gaussian distribution 
  */
-const gaussian = (M, std) =>
+export const gaussian = (M, std) =>
   Array.from(Array(M).keys()).map((n) =>
     Math.exp((-1 * (n - (M - 1) / 2) ** 2) / (2 * std ** 2))
   );
@@ -409,7 +412,7 @@ const gaussian = (M, std) =>
  * 
  * @returns 
  */
-const midiPitchToContourBin = (pitchMidi) =>
+export const midiPitchToContourBin = (pitchMidi) =>
   12.0 *
   CONTOURS_BINS_PER_SEMITONE *
   Math.log2(midiToHz(pitchMidi) / ANNOTATIONS_BASE_FREQUENCY);

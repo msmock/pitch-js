@@ -9,8 +9,10 @@
     "src",
     "model"
   ],
+  "scripts": {
+    "test": ""
+  },
   "devDependencies": {
-    "@spotify/web-scripts": "^13.0.1",
     "@tensorflow/tfjs-node": "^3.2.0",
     "audio-loader": "^1.0.3",
     "midi-writer-js": "^1.7.5",
