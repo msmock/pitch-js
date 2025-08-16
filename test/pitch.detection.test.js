@@ -1,6 +1,9 @@
 import * as tf from '@tensorflow/tfjs';
 import fs from 'fs';
 
+import { Resampler } from '../lib/resampler.js';
+import { ConvertToWav } from '../lib/convert2wav.js';
+
 import { AudioContext } from 'web-audio-api';
 import { BasicPitch } from '../src/inference.js';
 
@@ -13,26 +16,22 @@ import {
 import pkg from '@tonejs/midi';
 const { Midi } = pkg;
 
-import { Resampler } from '../lib/resampler.js';
-
 import * as tfnode from '@tensorflow/tfjs-node';
 
 /**
+ * convert the midi pitch to human readable pitch
  * 
  * @param {*} note 
  * @returns 
  */
 function midiToPitch(note) {
-
   const midiNote = note.pitchMidi;
-
   const noteMapping = [
     'C', 'C#', 'D', 'D#', 'E', 'F',
     'F#', 'G', 'G#', 'A', 'A#', 'B'
   ];
   const octave = Math.floor(midiNote / 12) - 1;
   const noteIndex = midiNote % 12;
-
   return noteMapping[noteIndex] + octave.toString();
 };
 
@@ -187,6 +186,12 @@ async function runTest() {
 
     // resample the audio file to rate 22050  
     audioBuffer = resample(audioBuffer, audioCtx);
+
+    // write the resampled file to disk 
+    const controlFile = process.cwd() + '/test/test-output/pitch.detection.test.resampled.wav';
+    const convertToWav = new ConvertToWav();
+    const exportBuffer = convertToWav.convert(audioBuffer);
+    fs.writeFileSync(controlFile, new DataView(exportBuffer));
 
     // run the basic pitch detection
     const frames = []; // frames where a note is active
