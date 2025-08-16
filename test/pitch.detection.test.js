@@ -21,6 +21,8 @@ import * as tfnode from '@tensorflow/tfjs-node';
 /**
  * convert the midi pitch to human readable pitch
  * 
+ * HR test: expect to run without exception
+ * 
  * @param {*} note 
  * @returns 
  */

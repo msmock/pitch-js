@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { AudioContext } from 'web-audio-api';
 import { Resampler } from '../lib/resampler.js';
+import assert from 'assert';
 
 /**
  *
@@ -8,7 +9,7 @@ import { Resampler } from '../lib/resampler.js';
 async function runTest() {
 
   // the auido file to pitch
-  const fileToPitch = process.cwd() + '/test/test-input/my-recording.wav';
+  const fileToPitch = process.cwd() + '/test/test-input/guitar-arpeggio.mp3';
   const clip = fs.readFileSync(fileToPitch);
 
   // decode the audio clip data. keeps the sample rate. 
@@ -19,17 +20,17 @@ async function runTest() {
     console.log("Error during audio decoding.");
   }
 
-  function onsuccess(audioBuffer) {
+  function onsuccess(inputBuffer) {
 
-    console.log('resample audio with sample rate ' + audioBuffer.sampleRate + ', buffer length ' + audioBuffer.length +
-      ', duration ' + audioBuffer.duration + ' and ' + audioBuffer.numberOfChannels + ' channel.');
+    console.log('resample audio with sample rate ' + inputBuffer.sampleRate + ', buffer length ' + inputBuffer.length +
+      ', duration ' + inputBuffer.duration + ' and ' + inputBuffer.numberOfChannels + ' channel.');
 
     const rate = 22050;
-    const converter = new Resampler(); 
-    const resampled = converter.resample(audioBuffer.getChannelData(0), audioBuffer.sampleRate, rate);
+    const converter = new Resampler();
+    const resampled = converter.resample(inputBuffer.getChannelData(0), inputBuffer.sampleRate, rate);
 
     let outputBuffer = audioCtx.createBuffer(
-      audioBuffer.numberOfChannels,
+      inputBuffer.numberOfChannels,
       resampled.length, // size (sampleRate * duration in sec)
       rate,
     );
@@ -45,6 +46,9 @@ async function runTest() {
     console.log('resampled audio to sample rate ' + outputBuffer.sampleRate + ', buffer length ' + outputBuffer.length +
       ', duration ' + outputBuffer.duration + ' and ' + outputBuffer.numberOfChannels + ' channel.');
 
+    assert.deepEqual(outputBuffer.sampleRate, 22050, 'expect to be resampled to 22050');
+    assert.deepEqual(outputBuffer.length, 210621, 'expect the buffer length to be 210621');
+    assert.deepEqual(outputBuffer.duration.toFixed(2), inputBuffer.duration.toFixed(2), 'expect the buffer length to be 9.55..');
   }
 
 }
