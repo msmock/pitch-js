@@ -225,20 +225,15 @@ async function runTest() {
       energyTolerance: 20, // was 11
     }
 
-    /**
-     * 
-     */
+    // convert the onsets and frames as returend by BasicPitch to note events
     const melodiaNoteEvents = outputToNotesPoly(frames, onsets, config);
 
-    /**
-     * the extracted melodia notes
-     */
+    // the extracted melodia notes
     const melodiaNotesAndBends = addPitchBendsToNoteEvents(contours, melodiaNoteEvents);
 
-    /**
-     * convert to note events with pitch, time and bends
-     */
+    // convert to note events with pitch, time and bends
     const poly = noteFramesToTime(melodiaNotesAndBends);
+    
 
     // ------- nomelodia ---------
 
