@@ -3,7 +3,7 @@ import fs from 'fs';
 import {Resampler} from '../lib/resampler.js';
 import {ConvertToWav} from '../lib/convert2wav.js';
 import {AudioContext} from 'web-audio-api';
-import {BasicPitch} from '../src/inference.js';
+import {BasicPitch} from '../src/basic.pitch.js';
 import pkg from '@tonejs/midi';
 const {Midi} = pkg;
 import {MidiExporter} from '../src/midi.exporter.js';

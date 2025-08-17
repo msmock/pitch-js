@@ -1,7 +1,7 @@
 import fs from 'fs';
 import assert from 'assert';
 import load from 'audio-loader';
-import {BasicPitch} from '../src/inference.js';
+import {BasicPitch} from '../src/basic.pitch.js';
 import {MidiExporter} from '../src/midi.exporter.js';
 import pkg from '@tonejs/midi';
 const {Midi} = pkg;
@@ -64,6 +64,9 @@ function writeDebugOutput(namePrefix, notes, noMelodiaNotes) {
 }
 
 /**
+ * TODO:
+ *  1. return boolean and log message to console
+ *  2. update all references
  *
  * @param {*} received
  * @param {*} argument
@@ -79,7 +82,7 @@ export const toAllBeClose = (received, argument, atol = 1e-3, rtol = 1e-5) => {
       message: () => `Received and expected lengths do not match! ` +
         `Received has length ${received.length}. ` +
         `Expected has length ${argument.length}.`,
-    };
+    }; // TODO return boolean and log message to console
   }
 
   for (let i = 0; i < received.length; ++i) {
@@ -192,14 +195,13 @@ async function testCMajor() {
   assert.deepEqual(onsetsForArray, onsets, 'in C major test, onsets should match');
   assert.deepEqual(contoursForArray, contours, 'in C major test, contours should match');
 
-
   const melodiaConfig = {
     onsetThresh: 0.25,
     frameThresh: 0.25,
     minNoteLength: 5,
     inferOnsets: true,
-    maxFreq: 10000,
-    minFreq: 40,
+    maxFreq: null,
+    minFreq: null,
     melodiaTrick: true,
     energyTolerance: 11,
   }
@@ -211,11 +213,11 @@ async function testCMajor() {
   // nomelodia
   const nomelodiaConfig = {
     onsetThresh: 0.5,
-    frameThresh: 0.5,
+    frameThresh: 0.3,
     minNoteLength: 5,
     inferOnsets: true,
-    maxFreq: 10000,
-    minFreq: 40,
+    maxFreq: null,
+    minFreq: null,
     melodiaTrick: false,
     energyTolerance: 11,
   }
@@ -292,7 +294,8 @@ async function testVocal() {
       window.forEach((frame, j) => {
         assert.deepEqual(frame.length, vocalDa80bpmData.audio_windowed[i][j].length, 'frame length should match');
         frame.forEach((channel, k) => {
-          // TODO assert.deepEqual( toAllBeClose(channel, vocalDa80bpmData.audio_windowed[i][j][k], 5e-3, 0), true, 'channel data should match');
+          assert.deepEqual( toAllBeClose(channel, vocalDa80bpmData.audio_windowed[i][j][k], 5e-3, 0).pass
+            , true, 'channel data should match');
         });
       });
     });
@@ -310,19 +313,19 @@ async function testVocal() {
   assert.deepEqual(frames.length, vocalDa80bpmData.unwrapped_output.note.length, 'frame data length should match');
 
   frames.forEach((frame, i) => {
-    // TODO assert.deepEqual(toAllBeClose(frame, vocalDa80bpmData.unwrapped_output.note[i], 5e-2, 0), true, 'frame data should match');
+    assert.deepEqual(toAllBeClose(frame, vocalDa80bpmData.unwrapped_output.note[i], 5e-2, 0).pass, true, 'frame data should match');
   });
 
   assert.deepEqual(onsets.length, vocalDa80bpmData.unwrapped_output.onset.length, 'onset data length should match');
 
   onsets.forEach((onset, i) => {
-    // TODO assert.deepEqual(toAllBeClose(onset, vocalDa80bpmData.unwrapped_output.onset[i], 5e-3, 0), true, 'onset data should match');
+    assert.deepEqual(toAllBeClose(onset, vocalDa80bpmData.unwrapped_output.onset[i], 5e-3, 0).pass, true, 'onset data should match');
   });
 
   assert.deepEqual(contours.length, vocalDa80bpmData.unwrapped_output.contour.length, 'contour data length should match');
 
   contours.forEach((contour, i) => {
-    // TODO assert.deepEqual(toAllBeClose(contour, vocalDa80bpmData.unwrapped_output.contour[i], 5e-3, 0), true, 'contour data should match');
+    assert.deepEqual(toAllBeClose(contour, vocalDa80bpmData.unwrapped_output.contour[i], 5e-3, 0).pass, true, 'contour data should match');
   });
 
   const melodiaConfig = {
@@ -380,6 +383,6 @@ async function testVocal() {
   console.log('Vocal test passed matching all asserts');
 }
 
-// TODO cleanup the code and fix toAllBeClose asserts
+// TODO cleanup the code
 testCMajor();
 testVocal();
