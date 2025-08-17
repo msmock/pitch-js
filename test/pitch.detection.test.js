@@ -1,26 +1,22 @@
 import * as tf from '@tensorflow/tfjs';
 import fs from 'fs';
-
-import { Resampler } from '../lib/resampler.js';
-import { ConvertToWav } from '../lib/convert2wav.js';
-
-import { AudioContext } from 'web-audio-api';
-import { BasicPitch } from '../src/inference.js';
-
+import {Resampler} from '../lib/resampler.js';
+import {ConvertToWav} from '../lib/convert2wav.js';
+import {AudioContext} from 'web-audio-api';
+import {BasicPitch} from '../src/inference.js';
 import pkg from '@tonejs/midi';
-const { Midi } = pkg;
-
-import { MidiExporter } from '../src/midi.exporter.js';
-
+const {Midi} = pkg;
+import {MidiExporter} from '../src/midi.exporter.js';
 import * as tfnode from '@tensorflow/tfjs-node';
+import load from "audio-loader";
 
 /**
  * convert the midi pitch to human readable pitch
- * 
+ *
  * HR test: expect to run without exception
- * 
- * @param {*} note 
- * @returns 
+ *
+ * @param {*} note
+ * @returns
  */
 function midiToPitch(note) {
   const midiNote = note.pitchMidi;
@@ -49,7 +45,7 @@ function compare(note1, note2) {
  */
 function writeOutputData(namePrefix, notes, noMelodiaNotes) {
 
-  // add the note pitch value, sort and export 
+  // add the note pitch value, sort and export
   notes.forEach((element) => {
     element.pitch = midiToPitch(element);
     element.pitchBends = [];
@@ -109,7 +105,8 @@ function writeOutputData(namePrefix, notes, noMelodiaNotes) {
             value: b,
           })
         );
-      };
+      }
+      ;
 
     });
   }
@@ -120,12 +117,13 @@ function writeOutputData(namePrefix, notes, noMelodiaNotes) {
 
 /**
  * resample the audio to rate, required by pitch detection (22050)
- * 
- * @param {*} audioBuffer 
- * @param {*} audioCtx 
- * @returns resampled AudioBuffer 
+ *
+ * @param {*} audioBuffer
+ * @returns resampled AudioBuffer
  */
-function resample(audioBuffer, audioCtx) {
+function resample(audioBuffer) {
+
+  let audioCtx = new AudioContext();
 
   const rate = 22050;
   const converter = new Resampler();
@@ -143,7 +141,8 @@ function resample(audioBuffer, audioCtx) {
     for (let i = 0; i < outputBuffer.length; i++) {
       channelData[i] = resampled[i];
     }
-  };
+  }
+  ;
 
   console.log('resampled audio to sample rate ' + outputBuffer.sampleRate + ', buffer length ' + outputBuffer.length +
     ', duration ' + outputBuffer.duration + ' and ' + outputBuffer.numberOfChannels + ' channel.');
@@ -157,111 +156,100 @@ function resample(audioBuffer, audioCtx) {
  */
 async function runTest() {
 
-  const modelFile = process.cwd() + '/model/model.json';
+  // the audio file to pitch
   const fileToPitch = process.cwd() + '/test/test-input/guitar-arpeggio.mp3';
+  let audioBuffer = await load(fileToPitch);
+
+  console.log('Run Basic Pitch with audio ' + fileToPitch);
+  console.log('AudioBuffer has sampleRate ' + audioBuffer.sampleRate + ', ' +
+    audioBuffer.numberOfChannels + ' channel ' + ', buffer length ' + audioBuffer.length +
+    ', duration ' + audioBuffer.duration);
+
+  // resample the audio file to rate 22050
+  audioBuffer = resample(audioBuffer);
+
+  // write the resampled file to disk
+  const controlFile = process.cwd() + '/test/test-output/pitch.detection.test.resampled.wav';
+  const convertToWav = new ConvertToWav();
+  const exportBuffer = convertToWav.convert(audioBuffer);
+  fs.writeFileSync(controlFile, new DataView(exportBuffer));
+
+  // run the basic pitch detection
+  const frames = []; // frames where a note is active
+  const onsets = []; // the first few frames of every note
+  const contours = []; // the estimated phrases (of a voice)
+
+  let pct = 0;
 
   // load the model
+  const modelFile = process.cwd() + '/model/model.json';
   const model = tf.loadGraphModel('file://' + modelFile);
+  const basicPitch = new BasicPitch(model);
 
-  // the auido file to pitch
-  const clip = fs.readFileSync(fileToPitch);
-
-  // decode the audio file
-  const audioCtx = new AudioContext();
-  audioCtx.decodeAudioData(clip, whenDecoded, () => console.log('Error during decoding of ' + fileToPitch));
-
-  /**
-   * @param {*} audioBuffer 
-   */
-  async function whenDecoded(audioBuffer) {
-
-    console.log('Run Basic Pitch with audio ' + fileToPitch);
-    console.log('AudioBuffer has sampleRate ' + audioBuffer.sampleRate + ', ' +
-      audioBuffer.numberOfChannels + ' channel ' + ', buffer length ' + audioBuffer.length +
-      ', duration ' + audioBuffer.duration);
-
-    // resample the audio file to rate 22050  
-    audioBuffer = resample(audioBuffer, audioCtx);
-
-    // write the resampled file to disk 
-    const controlFile = process.cwd() + '/test/test-output/pitch.detection.test.resampled.wav';
-    const convertToWav = new ConvertToWav();
-    const exportBuffer = convertToWav.convert(audioBuffer);
-    fs.writeFileSync(controlFile, new DataView(exportBuffer));
-
-    // run the basic pitch detection
-    const frames = []; // frames where a note is active
-    const onsets = []; // the first few frames of every note
-    const contours = []; // the estimated phrases (of a voice)
-
-    let pct = 0;
-    const basicPitch = new BasicPitch(model);
-
-    await basicPitch.evaluateModel(
-      audioBuffer,
-      (f, o, c) => {
-        frames.push(...f);
-        onsets.push(...o);
-        contours.push(...c);
-      },
-      (p) => {
-        pct = p;
-      }
-    );
-
-    // TODO: tune the settings for jazz guitar
-    let config = {
-      onsetThresh: 0.6, // was 0.5
-      frameThresh: 0.4,
-      minNoteLength: 80,
-      inferOnsets: true,
-      maxFreq: 1000,
-      minFreq: 80,
-      melodiaTrick: true,
-      energyTolerance: 20, // was 11
+  await basicPitch.evaluateModel(
+    audioBuffer,
+    (f, o, c) => {
+      frames.push(...f);
+      onsets.push(...o);
+      contours.push(...c);
+    },
+    (p) => {
+      pct = p;
     }
+  );
 
-    // instrument is guitar, bpm, 4/4
-    const midiExport = new MidiExporter(24, 120, [4, 4]); 
-
-    // convert the onsets and frames as returend by BasicPitch to note events
-    const melodiaNoteEvents = midiExport.outputToNotesPoly(frames, onsets, config);
-
-    // the extracted melodia notes
-    const melodiaNotesAndBends = midiExport.addPitchBendsToNoteEvents(contours, melodiaNoteEvents);
-
-    // convert to note events with pitch, time and bends
-    const poly = midiExport.noteFramesToTime(melodiaNotesAndBends);
-    
-
-    // ------- nomelodia ---------
-
-    // nomelodia
-    config = {
-      onsetThresh: 0.25,
-      frameThresh: 0.25,
-      minNoteLength: 5,
-      inferOnsets: true,
-      maxFreq: 1000,
-      minFreq: 80,
-      melodiaTrick: false,
-      energyTolerance: 11,
-    }
-
-    // the extracted nomelodia notes 
-    const noMelodiaNotesAndBends = midiExport.addPitchBendsToNoteEvents(contours, midiExport.outputToNotesPoly(frames, onsets, config));
-
-    // convert to note events with pitch, time and bends
-    const polyNoMelodia = midiExport.noteFramesToTime(
-      noMelodiaNotesAndBends
-    );
-
-    // write json output
-    const jsonOutputFile = process.cwd() + '/test/test-output/pitch.detection.test';
-    writeOutputData(jsonOutputFile, poly, polyNoMelodia);
-
-    console.log('Finished pitch detection of file ' + fileToPitch);
+  // TODO: tune the settings for jazz guitar
+  let config = {
+    onsetThresh: 0.6, // was 0.5
+    frameThresh: 0.4,
+    minNoteLength: 80,
+    inferOnsets: true,
+    maxFreq: 1000,
+    minFreq: 80,
+    melodiaTrick: true,
+    energyTolerance: 20, // was 11
   }
+
+  const midiExport = new MidiExporter();
+
+  // convert the onsets and frames as returend by BasicPitch to note events
+  const melodiaNoteEvents = midiExport.outputToNotesPoly(frames, onsets, config);
+
+  // the extracted melodia notes
+  const melodiaNotesAndBends = midiExport.addPitchBendsToNoteEvents(contours, melodiaNoteEvents);
+
+  // convert to note events with pitch, time and bends
+  const poly = midiExport.noteFramesToTime(melodiaNotesAndBends);
+
+
+  // ------- nomelodia ---------
+
+  // nomelodia
+  config = {
+    onsetThresh: 0.25,
+    frameThresh: 0.25,
+    minNoteLength: 5,
+    inferOnsets: true,
+    maxFreq: 1000,
+    minFreq: 80,
+    melodiaTrick: false,
+    energyTolerance: 11,
+  }
+
+  // the extracted nomelodia notes
+  const noMelodiaNotesAndBends = midiExport.addPitchBendsToNoteEvents(contours, midiExport.outputToNotesPoly(frames, onsets, config));
+
+  // convert to note events with pitch, time and bends
+  const polyNoMelodia = midiExport.noteFramesToTime(
+    noMelodiaNotesAndBends
+  );
+
+  // write json output
+  const jsonOutputFile = process.cwd() + '/test/test-output/pitch.detection.test';
+  writeOutputData(jsonOutputFile, poly, polyNoMelodia);
+
+  console.log('Finished pitch detection of file ' + fileToPitch);
+
 }
 
 // run the test

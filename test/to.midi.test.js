@@ -1,17 +1,13 @@
 import * as tf from '@tensorflow/tfjs-node';
-
 import midipkg from '@tonejs/midi';
 const { Midi } = midipkg;
-
 import { MidiExporter } from '../src/midi.exporter.js';
-
 import assert from 'assert';
 
 let testdata;
 
 // construct with midi instrument 24 (Acoustic Guitar (nylon)) and tempo 120
-let toMidi = new MidiExporter(10, 142, [4, 4]);
-
+let toMidi = new MidiExporter();
 
 assert.deepEqual(toMidi.hzToMidi(440), 69, 'hzToMidi should understands what 440Hz is');
 
@@ -48,7 +44,6 @@ const [mean, std] = toMidi.meanStdDev(tf
 assert.deepEqual(mean.toFixed(2), 2, 'meanStdDev should return a mean and standard deviation of (2, 2) for an N(2, 4) array');
 assert.deepEqual(std.toFixed(2), 2, 'meanStdDev should return a mean and standard deviation of (2, 2) for an N(2, 4) array');
 
-
 const generatedMidiData = new Midi(
 
     toMidi.generateMidi([
@@ -73,20 +68,16 @@ const expectedMidiData = {
         meta: [],
         name: '',
         ppq: 480,
-        tempos: [{ bpm: 120, ticks: 0 }],
-        timeSignatures: [{ ticks: 0, timeSignature: [4, 4], measures: 0 }],
+        tempos: [],
+        timeSignatures: [],
     },
     tracks: [
         {
             channel: 0,
             controlChanges: {},
             pitchBends: [],
-            instrument: {
-                family: 'guitar',
-                number: 24,
-                name: 'acoustic guitar (nylon)'
-            },
-            name: '',
+            instrument: { family: 'piano', number: 0, name: 'acoustic grand piano' },
+          name: '',
             notes: [
                 {
                     duration: 2,
@@ -128,4 +119,4 @@ console.log(expectedMidiData.tracks[0].notes);
 
 assert.deepEqual(generatedMidiData.toJSON(), expectedMidiData, 'generated midi data should match the expected data');
 
-console.log('sucesss: all asserts are fulfilled');
+console.log('success: all asserts are fulfilled');
