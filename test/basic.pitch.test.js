@@ -4,6 +4,7 @@ import load from 'audio-loader';
 import {BasicPitch} from '../src/basic.pitch.js';
 import {MidiExporter} from '../src/midi.exporter.js';
 import pkg from '@tonejs/midi';
+
 const {Midi} = pkg;
 import * as tf from '@tensorflow/tfjs';
 import * as tfnode from '@tensorflow/tfjs-node';
@@ -21,8 +22,9 @@ function writeDebugOutput(namePrefix, notes, noMelodiaNotes) {
   fs.writeFileSync(`${namePrefix}.json`, JSON.stringify(notes));
   fs.writeFileSync(`${namePrefix}.nomelodia.json`, JSON.stringify(noMelodiaNotes));
 
-  // create midi track
   const midi = new Midi();
+
+  // create midi track
   const trackWithMelodia = midi.addTrack();
   trackWithMelodia.name = namePrefix;
 
@@ -42,9 +44,9 @@ function writeDebugOutput(namePrefix, notes, noMelodiaNotes) {
     }
   });
 
-  // nomelodia
   const trackNoMelodia = midi.addTrack();
   trackNoMelodia.name = `${namePrefix}.nomelodia`;
+
   noMelodiaNotes.forEach(note => {
     trackNoMelodia.addNote({
       midi: note.pitchMidi,
@@ -52,6 +54,7 @@ function writeDebugOutput(namePrefix, notes, noMelodiaNotes) {
       time: note.startTimeSeconds,
       velocity: note.amplitude,
     });
+
     if (note.pitchBends) {
       note.pitchBends.forEach((b, i) => trackWithMelodia.addPitchBend({
         time: note.startTimeSeconds +
@@ -60,6 +63,7 @@ function writeDebugOutput(namePrefix, notes, noMelodiaNotes) {
       }));
     }
   });
+
   fs.writeFileSync(`${namePrefix}.mid`, midi.toArray());
 }
 
@@ -200,8 +204,8 @@ async function testCMajor() {
     frameThresh: 0.25,
     minNoteLength: 5,
     inferOnsets: true,
-    maxFreq: null,
-    minFreq: null,
+    maxFreq: 1000,
+    minFreq: 60,
     melodiaTrick: true,
     energyTolerance: 11,
   }
@@ -216,8 +220,8 @@ async function testCMajor() {
     frameThresh: 0.3,
     minNoteLength: 5,
     inferOnsets: true,
-    maxFreq: null,
-    minFreq: null,
+    maxFreq: 1000,
+    minFreq: 60,
     melodiaTrick: false,
     energyTolerance: 11,
   }
@@ -294,7 +298,7 @@ async function testVocal() {
       window.forEach((frame, j) => {
         assert.deepEqual(frame.length, vocalDa80bpmData.audio_windowed[i][j].length, 'frame length should match');
         frame.forEach((channel, k) => {
-          assert.deepEqual( toAllBeClose(channel, vocalDa80bpmData.audio_windowed[i][j][k], 5e-3, 0).pass
+          assert.deepEqual(toAllBeClose(channel, vocalDa80bpmData.audio_windowed[i][j][k], 5e-3, 0).pass
             , true, 'channel data should match');
         });
       });
@@ -333,8 +337,8 @@ async function testVocal() {
     frameThresh: vocalDa80bpmData.frame_thresh,
     minNoteLength: vocalDa80bpmData.min_note_length,
     inferOnsets: true,
-    maxFreq: null,
-    minFreq: null,
+    maxFreq: 1000,
+    minFreq: 60,
     melodiaTrick: true,
     energyTolerance: 11,
   }
@@ -353,8 +357,8 @@ async function testVocal() {
     frameThresh: vocalDa80bpmDataNoMelodia.frame_thresh,
     minNoteLength: vocalDa80bpmDataNoMelodia.min_note_length,
     inferOnsets: true,
-    maxFreq: null,
-    minFreq: null,
+    maxFreq: 1000,
+    minFreq: 60,
     melodiaTrick: false,
     energyTolerance: 11,
   }

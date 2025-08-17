@@ -5,6 +5,7 @@ import {ConvertToWav} from '../lib/convert2wav.js';
 import {AudioContext} from 'web-audio-api';
 import {BasicPitch} from '../src/basic.pitch.js';
 import pkg from '@tonejs/midi';
+
 const {Midi} = pkg;
 import {MidiExporter} from '../src/midi.exporter.js';
 import * as tfnode from '@tensorflow/tfjs-node';
@@ -81,7 +82,7 @@ function writeOutputData(namePrefix, notes, noMelodiaNotes) {
     }
   });
 
-  const nomelodia = false;
+  const nomelodia = false; // melodia detection is much better
   if (nomelodia) {
 
     const trackNoMelodia = midi.addTrack();
@@ -106,7 +107,6 @@ function writeOutputData(namePrefix, notes, noMelodiaNotes) {
           })
         );
       }
-      ;
 
     });
   }
@@ -204,7 +204,7 @@ async function runTest() {
     frameThresh: 0.4,
     minNoteLength: 80,
     inferOnsets: true,
-    maxFreq: 1000,
+    maxFreq: 670,
     minFreq: 80,
     melodiaTrick: true,
     energyTolerance: 20, // was 11
