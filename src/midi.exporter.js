@@ -23,14 +23,14 @@ const ANNOTATIONS_N_SEMITONES = 88;
 const N_FREQ_BINS_CONTOURS = ANNOTATIONS_N_SEMITONES * CONTOURS_BINS_PER_SEMITONE;
 
 /**
- * 
+ *
  */
 export class MidiExporter {
 
   constructor(instrument, bpm, timeSignature) {
     this.instrument = instrument;
     this.bpm = bpm;
-    this.timeSignature = timeSignature; 
+    this.timeSignature = timeSignature;
 
   }
 
@@ -44,17 +44,17 @@ export class MidiExporter {
 
   /**
    * convert the frame index to time in seconds
-   * 
-   * @param {} frame 
+   *
+   * @param {} frame
    * @returns the time in seconds
    */
   modelFrameToTime(frame) {
     return (frame * FFT_HOP) / AUDIO_SAMPLE_RATE - WINDOW_OFFSET * Math.floor(frame / ANNOT_N_FRAMES);
   }
   /**
-   * 
-   * @param {*} arr 
-   * @returns 
+   *
+   * @param {*} arr
+   * @returns
    */
   argMax(arr) {
     return arr.length === 0
@@ -212,12 +212,12 @@ export class MidiExporter {
 
   /**
    * Convert the onsets and frames as returend by BasicPitch to note events
-   * 
+   *
    * @param {*} config.frames as returned from BasicPitch
    * @param {*} config.framesonsets as returned from BasicPitch
    * @param {*} config.onsetThresh
    * @param {*} config.frameThresh
-   * @param {*} config.minNoteLen TODO: does not work properly 
+   * @param {*} config.minNoteLen TODO: does not work properly
    * @param {*} config.inferOnsets
    * @param {*} config.maxFreq
    * @param {*} config.minFreq
@@ -225,12 +225,12 @@ export class MidiExporter {
    * @param {*} config.energyTolerance
    *
    * @returns an array of note events objects
-   * 
+   *
    */
   outputToNotesPoly(frames, onsets, config) {
 
-    /** 
-    default values: 
+    /**
+    default values:
       onsetThresh = 0.5,
       frameThresh = 0.3,
       minNoteLen = 5,
@@ -356,7 +356,7 @@ export class MidiExporter {
             remainingEnergy[i][freqIdx - 1] = 0;
           }
           i += 1;
-        } // end while 
+        } // end while
 
         const iEnd = i - 1 - k;
         i = iMid - 1;
@@ -411,11 +411,11 @@ export class MidiExporter {
 
   /**
    * Create gaussian distribution with mean and standard deviation
-   * 
-   * @param {*} M 
-   * @param {*} std 
-   * 
-   * @returns an array of a gaussian distribution 
+   *
+   * @param {*} M
+   * @param {*} std
+   *
+   * @returns an array of a gaussian distribution
    */
   gaussian(M, std) {
     return Array.from(Array(M).keys()).map((n) =>
@@ -424,21 +424,21 @@ export class MidiExporter {
   }
 
   /**
-   * 
+   *
    * @param {*} pitchMidi number of the midi pitch
-   * 
-   * @returns 
+   *
+   * @returns
    */
   midiPitchToContourBin(pitchMidi) {
     return 12.0 * CONTOURS_BINS_PER_SEMITONE * Math.log2(this.midiToHz(pitchMidi) / ANNOTATIONS_BASE_FREQUENCY);
   }
   /**
-   * 
-   * @param {*} contours the contours returned by the BaiscPitch detection  
-   * @param {*} notes the note events  
+   *
+   * @param {*} contours the contours returned by the BaiscPitch detection
+   * @param {*} notes the note events
    * @param {*} nBinsTolerance ?
-   * 
-   * @returns 
+   *
+   * @returns
    */
   addPitchBendsToNoteEvents(
     contours,
@@ -481,17 +481,17 @@ export class MidiExporter {
 
   /**
    * Convert the frame indicees of the start frame and the duration frames to time in seconds
-   * 
-   * @param {*} notes 
-   * 
-   * notes: 
+   *
+   * @param {*} notes
+   *
+   * notes:
     {
       startFrame: int number,
       durationFrames: int number (iEnd - iStart),
       pitchMidi: int number,
       amplitude: float number
     }
-   * 
+   *
    * @returns an array of timed note events
    */
   noteFramesToTime = (notes) =>
@@ -507,16 +507,16 @@ export class MidiExporter {
 
   /**
    * Create the midi data from the timed note events
-   * 
+   *
    * see https://github.com/Tonejs/Midi/tree/master/test
-   * 
-   * @param {*} notes 
-   * @returns 
+   *
+   * @param {*} notes
+   * @returns
    */
   generateMidi(notes) {
 
     const midi = new Midi();
-    midi.header.setTempo(this.bpm); 
+    midi.header.setTempo(this.bpm);
     midi.header.timeSignatures.push({
 				ticks: 0,
 				timeSignature: this.timeSignature,

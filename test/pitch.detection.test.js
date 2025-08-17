@@ -55,9 +55,8 @@ function writeOutputData(namePrefix, notes, noMelodiaNotes) {
     element.pitchBends = [];
   });
   notes.sort(compare);
-  fs.writeFileSync(`${namePrefix}.json`, JSON.stringify(notes));
 
-  // add the note pitch value, sort and export 
+  fs.writeFileSync(`${namePrefix}.json`, JSON.stringify(notes));
   fs.writeFileSync(`${namePrefix}.nomelodia.json`, JSON.stringify(noMelodiaNotes));
 
   // create midi track
@@ -162,7 +161,6 @@ async function runTest() {
   const fileToPitch = process.cwd() + '/test/test-input/guitar-arpeggio.mp3';
 
   // load the model
-  console.log('Load model from file ' + modelFile);
   const model = tf.loadGraphModel('file://' + modelFile);
 
   // the auido file to pitch

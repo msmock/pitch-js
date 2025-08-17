@@ -1,5 +1,6 @@
 import fs from 'fs';
 import * as tf from '@tensorflow/tfjs';
+
 import load from 'audio-loader';
 
 import { AudioBuffer, AudioContext } from 'web-audio-api';
@@ -36,6 +37,7 @@ function writeDebugOutput(name, notes, noMelodiaNotes) {
             }));
         }
     });
+
     const trackNoMelodia = midi.addTrack();
     trackNoMelodia.name = `${name}.nomelodia`;
     noMelodiaNotes.forEach(note => {
@@ -57,8 +59,11 @@ function writeDebugOutput(name, notes, noMelodiaNotes) {
 }
 
 expect.extend({
+
     toBeCloseToMidi(received, argument, atol = 1e-3, rtol = 1e-5) {
+
         for (let i = 0; i < received.length; ++i) {
+
             if (received[i].pitchBends !== undefined &&
                 argument[i].pitchBends !== undefined) {
                 const isClose = toAllBeClose(received[i].pitchBends, argument[i].pitchBends, 1e-3, 0);
@@ -104,7 +109,7 @@ test('Can infer a C Major Scale', async () => {
     const audioPath = process.cwd() + '/test/test-input/C_major.resampled.mp3';
     console.log('read audio file ' + audioPath);
 
-    console.log('filesystem is ' + fs); // TODO filesystem is undefined ?? 
+    console.log('filesystem is ' + fs); // TODO filesystem is undefined ??
 
     const wavBuffer = fs.readFileSync(audioPath);
 
@@ -117,8 +122,6 @@ test('Can infer a C Major Scale', async () => {
     while (audioBuffer === undefined) {
         await new Promise(r => setTimeout(r, 1));
     }
-
-    
 
     const frames = [];
     const onsets = [];
@@ -135,6 +138,7 @@ test('Can infer a C Major Scale', async () => {
     });
 
     expect(pct).toEqual(1);
+
     const framesForArray = [];
     const onsetsForArray = [];
     const contoursForArray = [];
@@ -167,10 +171,10 @@ test('Can infer a C Major Scale', async () => {
 
 
 test('Can correctly evaluate vocal 80 bpm data', async () => {
-    
+
     const vocalDa80bpmData = require( process.cwd() + '/test/test-input/vocal-da-80bpm.json'); // HERE
     const vocalDa80bpmDataNoMelodia = require( process.cwd() + '/test/test-input/vocal-da-80bpm.nomelodia.json');
-    
+
     const wavBuffer = await load( process.cwd() + '/test/test-input/vocal-da-80bpm.22050.wav');
 
     const frames = [];
@@ -181,9 +185,9 @@ test('Can correctly evaluate vocal 80 bpm data', async () => {
     const basicPitch = new BasicPitch(`file://${__dirname}/../model/model.json`);
     const wavData = Array.from(Array(wavBuffer.length).keys()).map(key => wavBuffer._data[key]);
     const audioBuffer = AudioBuffer.fromArray([wavData], 22050);
-    
+
     const [preparedDataTensor, audioOriginalLength] = await basicPitch.prepareData(audioBuffer.getChannelData(0));
-    
+
     const audioWindowedWindows = vocalDa80bpmData.audio_windowed.length;
     const audioWindowedFrames = vocalDa80bpmData.audio_windowed[0].length;
     const audioWindowedChannels = vocalDa80bpmData.audio_windowed[0][0].length;
