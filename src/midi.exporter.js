@@ -1,5 +1,6 @@
 import pkg from '@tonejs/midi';
-const { Midi } = pkg;
+
+const {Midi} = pkg;
 
 const MIDI_OFFSET = 21;
 const AUDIO_SAMPLE_RATE = 22050;
@@ -25,6 +26,12 @@ const N_FREQ_BINS_CONTOURS = ANNOTATIONS_N_SEMITONES * CONTOURS_BINS_PER_SEMITON
  */
 export class MidiExporter {
 
+  constructor(bpm = 120, instrument = 25, timeSignature = [4, 4]) {
+    this.bpm = bpm;
+    this.instrument = instrument; //25 Acoustic Guitar (nylon)
+    this.timeSignature = timeSignature;
+  }
+
   hzToMidi(hz) {
     return 12 * (Math.log2(hz) - Math.log2(440.0)) + 69;
   }
@@ -36,15 +43,16 @@ export class MidiExporter {
   /**
    * convert the frame index to time in seconds
    *
-   * @param {} frame
+   * @param frame
    * @returns the time in seconds
    */
   modelFrameToTime(frame) {
     return (frame * FFT_HOP) / AUDIO_SAMPLE_RATE - WINDOW_OFFSET * Math.floor(frame / ANNOT_N_FRAMES);
   }
+
   /**
    *
-   * @param {*} arr
+   * @param arr
    * @returns
    */
   argMax(arr) {
@@ -221,16 +229,16 @@ export class MidiExporter {
   outputToNotesPoly(frames, onsets, config) {
 
     /**
-    default values:
-      onsetThresh = 0.5,
-      frameThresh = 0.3,
-      minNoteLen = 5,
-      inferOnsets = true,
-      maxFreq = null,
-      minFreq = null,
-      melodiaTrick = true,
-      energyTolerance = 11
-    */
+     default values:
+     onsetThresh = 0.5,
+     frameThresh = 0.3,
+     minNoteLen = 5,
+     inferOnsets = true,
+     maxFreq = null,
+     minFreq = null,
+     melodiaTrick = true,
+     energyTolerance = 11
+     */
 
     let inferredFrameThresh = config.frameThresh;
     if (inferredFrameThresh === null) {
@@ -322,7 +330,7 @@ export class MidiExporter {
           (prevCoord, currRow, rowIdx) => {
             const colMaxIdx = this.argMax(currRow);
             return currRow[colMaxIdx] >
-              remainingEnergy[prevCoord[0]][prevCoord[1]]
+            remainingEnergy[prevCoord[0]][prevCoord[1]]
               ? [rowIdx, colMaxIdx]
               : prevCoord;
           },
@@ -423,6 +431,7 @@ export class MidiExporter {
   midiPitchToContourBin(pitchMidi) {
     return 12.0 * CONTOURS_BINS_PER_SEMITONE * Math.log2(this.midiToHz(pitchMidi) / ANNOTATIONS_BASE_FREQUENCY);
   }
+
   /**
    *
    * @param {*} contours the contours returned by the BaiscPitch detection
@@ -466,7 +475,7 @@ export class MidiExporter {
       const pbShift = nBinsTolerance - Math.max(0, nBinsTolerance - freqIdx);
       const bends = this.argMaxAxis1(pitchBendSubmatrix).map((v) => v - pbShift);
 
-      return Object.assign(Object.assign({}, note), { pitchBends: bends });
+      return Object.assign(Object.assign({}, note), {pitchBends: bends});
     });
   }
 
@@ -476,12 +485,12 @@ export class MidiExporter {
    * @param {*} notes
    *
    * notes:
-    {
-      startFrame: int number,
-      durationFrames: int number (iEnd - iStart),
-      pitchMidi: int number,
-      amplitude: float number
-    }
+   {
+   startFrame: int number,
+   durationFrames: int number (iEnd - iStart),
+   pitchMidi: int number,
+   amplitude: float number
+   }
    *
    * @returns an array of timed note events
    */
@@ -499,7 +508,7 @@ export class MidiExporter {
   /**
    * Create the midi data from the timed note events
    *
-   * see https://github.com/Tonejs/Midi/tree/master/test
+   * TODO switch to https://github.com/grimmdude/MidiWriterJS/
    *
    * @param {*} notes
    * @returns
@@ -508,16 +517,18 @@ export class MidiExporter {
 
     const midi = new Midi();
 
-    /**
+    // set the tempo
     midi.header.setTempo(this.bpm);
+
+    // the time signature
     midi.header.timeSignatures.push({
-				ticks: 0,
-				timeSignature: this.timeSignature,
-			}); */
+      ticks: 0,
+      timeSignature: this.timeSignature,
+    });
 
+    // track with instrument
     const track = midi.addTrack();
-
-    // track.instrument.number = this.instrument;
+    track.instrument.number = this.instrument;
 
     notes.forEach((note) => {
       track.addNote({
@@ -538,6 +549,7 @@ export class MidiExporter {
         });
       }
     });
+
     return Buffer.from(midi.toArray());
   }
 

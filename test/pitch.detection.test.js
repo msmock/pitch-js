@@ -62,14 +62,12 @@ function writeOutputData(namePrefix, notes, noMelodiaNotes) {
   trackWithMelodia.name = namePrefix;
 
   notes.forEach((note) => {
-
     trackWithMelodia.addNote({
       midi: note.pitchMidi,
       duration: note.durationSeconds,
       time: note.startTimeSeconds,
       velocity: note.amplitude,
     });
-
     if (note.pitchBends) {
       note.pitchBends.forEach((b, i) =>
         trackWithMelodia.addPitchBend({
@@ -157,7 +155,7 @@ function resample(audioBuffer) {
 async function runTest() {
 
   // the audio file to pitch
-  const fileToPitch = process.cwd() + '/test/test-input/guitar-arpeggio.mp3';
+  const fileToPitch = process.cwd() + '/test/test-input/guitar-c-arp.wav';
   let audioBuffer = await load(fileToPitch);
 
   console.log('Run Basic Pitch with audio ' + fileToPitch);
@@ -205,7 +203,7 @@ async function runTest() {
     minNoteLength: 80,
     inferOnsets: true,
     maxFreq: 670,
-    minFreq: 80,
+    minFreq: 120,
     melodiaTrick: true,
     energyTolerance: 20, // was 11
   }
@@ -249,7 +247,6 @@ async function runTest() {
   writeOutputData(jsonOutputFile, poly, polyNoMelodia);
 
   console.log('Finished pitch detection of file ' + fileToPitch);
-
 }
 
 // run the test

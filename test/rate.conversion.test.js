@@ -9,10 +9,10 @@ import assert from 'assert';
 async function runTest() {
 
   // the auido file to pitch
-  const fileToPitch = process.cwd() + '/test/test-input/guitar-arpeggio.mp3';
+  const fileToPitch = process.cwd() + '/test/test-input/guitar-c-arp.wav';
   const clip = fs.readFileSync(fileToPitch);
 
-  // decode the audio clip data. keeps the sample rate. 
+  // decode the audio clip data. keeps the sample rate.
   const audioCtx = new AudioContext();
   audioCtx.decodeAudioData(clip, onsuccess, onerror);
 
