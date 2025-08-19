@@ -1,7 +1,8 @@
 import * as tf from '@tensorflow/tfjs-node';
 import midipkg from '@tonejs/midi';
-const { Midi } = midipkg;
-import { MidiExporter } from '../src/midi.exporter.js';
+
+const {Midi} = midipkg;
+import {MidiExporter} from '../src/midi.exporter.js';
 import assert from 'assert';
 
 let testdata;
@@ -17,14 +18,14 @@ assert.deepEqual(toMidi.midiPitchToContourBin(69), 144, 'midiPitchToContourBin s
 
 testdata = [[0, 0], [1, 0.0116], [2, 0.0232]];
 testdata.forEach((data) => {
-    // console.log(data[0] + ' ' + data[1]);
-    assert.deepEqual(toMidi.modelFrameToTime(data[0]).toFixed(4), data[1], 'modelFrameToTime returns correct times');
+  // console.log(data[0] + ' ' + data[1]);
+  assert.deepEqual(toMidi.modelFrameToTime(data[0]).toFixed(4), data[1], 'modelFrameToTime returns correct times');
 });
 
 testdata = [[[], null], [[1, 2, -1], 1],];
 testdata.forEach((data) => {
-    // console.log(data[0] + ' ' + data[1]);
-    assert.deepEqual(toMidi.argMax(data[0]), data[1], 'argMax handles to handle empty and nonempty inputs correctly');
+  // console.log(data[0] + ' ' + data[1]);
+  assert.deepEqual(toMidi.argMax(data[0]), data[1], 'argMax handles to handle empty and nonempty inputs correctly');
 });
 
 testdata = [[10, 11, 12], [13, 14, 15]];
@@ -38,84 +39,74 @@ assert.deepEqual(Y, [1, 0, 1], 'whereGreaterThanAxis1 should return all elements
 const expectedMean = 2;
 const expectedStd = 2;
 const [mean, std] = toMidi.meanStdDev(tf
-    .randomNormal([1000, 1000], expectedMean, expectedStd, 'float32')
-    .arraySync());
+  .randomNormal([1000, 1000], expectedMean, expectedStd, 'float32')
+  .arraySync());
 
 assert.deepEqual(mean.toFixed(2), 2, 'meanStdDev should return a mean and standard deviation of (2, 2) for an N(2, 4) array');
 assert.deepEqual(std.toFixed(2), 2, 'meanStdDev should return a mean and standard deviation of (2, 2) for an N(2, 4) array');
 
 const generatedMidiData = new Midi(
-
-    toMidi.generateMidi([
-        {
-            startTimeSeconds: 1,
-            durationSeconds: 2,
-            pitchMidi: 65,
-            amplitude: 0.5,
-        },
-        {
-            startTimeSeconds: 3,
-            durationSeconds: 1,
-            pitchMidi: 75,
-            amplitude: 0.25,
-        },
-    ])
+  toMidi.generateMidi([
+    {
+      startTimeSeconds: 1,
+      durationSeconds: 2,
+      pitchMidi: 65,
+      amplitude: 0.5,
+    },
+    {
+      startTimeSeconds: 3,
+      durationSeconds: 1,
+      pitchMidi: 75,
+      amplitude: 0.25,
+    },
+  ])
 );
 
 const expectedMidiData = {
-    header: {
-        keySignatures: [],
-        meta: [],
-        name: '',
-        ppq: 480,
-        tempos: [],
-        timeSignatures: [],
-    },
-    tracks: [
+  header: {
+    keySignatures: [],
+    meta: [],
+    name: '',
+    ppq: 480,
+    tempos: [{bpm: 120, ticks: 0}],
+    timeSignatures: [{ticks: 0, timeSignature: [4, 4], measures: 0}],
+  },
+  tracks: [
+    {
+      channel: 0,
+      controlChanges: {},
+      pitchBends: [],
+      instrument: {
+        family: 'guitar',
+        number: 25,
+        name: 'acoustic guitar (steel)'
+      },
+
+      name: '',
+      notes: [
         {
-            channel: 0,
-            controlChanges: {},
-            pitchBends: [],
-            instrument: { family: 'piano', number: 0, name: 'acoustic grand piano' },
-          name: '',
-            notes: [
-                {
-                    duration: 2,
-                    durationTicks: 1920,
-                    midi: 65,
-                    name: 'F4',
-                    ticks: 960,
-                    time: 1,
-                    velocity: 0.49606299212598426,
-                },
-                {
-                    duration: 1,
-                    durationTicks: 960,
-                    midi: 75,
-                    name: 'D#5',
-                    ticks: 2880,
-                    time: 3,
-                    velocity: 0.2440944881889764,
-                },
-            ],
-            endOfTrackTicks: 3840,
+          duration: 2,
+          durationTicks: 1920,
+          midi: 65,
+          name: 'F4',
+          ticks: 960,
+          time: 1,
+          velocity: 0.49606299212598426,
         },
-    ],
+        {
+          duration: 1,
+          durationTicks: 960,
+          midi: 75,
+          name: 'D#5',
+          ticks: 2880,
+          time: 3,
+          velocity: 0.2440944881889764,
+        },
+      ],
+      endOfTrackTicks: 3840,
+    },
+  ],
 };
-
-/**
-console.log('header actual/expected');
-console.log(generatedMidiData.toJSON().header);
-console.log(expectedMidiData.header);
-
-console.log('tracks actual/expected');
-console.log(generatedMidiData.toJSON().tracks);
-console.log(expectedMidiData.tracks);
-
-console.log('track notes actual/expected');
-console.log(generatedMidiData.toJSON().tracks[0].notes);
-console.log(expectedMidiData.tracks[0].notes);
-*/
 
 assert.deepEqual(generatedMidiData.toJSON(), expectedMidiData, 'generated midi data should match the expected data');
 

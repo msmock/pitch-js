@@ -4,9 +4,6 @@ import {Resampler} from '../lib/resampler.js';
 import {ConvertToWav} from '../lib/convert2wav.js';
 import {AudioContext} from 'web-audio-api';
 import {BasicPitch} from '../src/basic.pitch.js';
-import pkg from '@tonejs/midi';
-
-const {Midi} = pkg;
 import {MidiExporter} from '../src/midi.exporter.js';
 import * as tfnode from '@tensorflow/tfjs-node';
 import load from "audio-loader";
@@ -35,7 +32,7 @@ function compare(note1, note2) {
   if (note1.startTimeSeconds < note2.startTimeSeconds) return -1;
   if (note1.startTimeSeconds > note2.startTimeSeconds) return 1;
   return 0;
-};
+}
 
 /**
  * Write the pitch detection results to file as json and midi
@@ -55,62 +52,6 @@ function writeOutputData(namePrefix, notes, noMelodiaNotes) {
 
   fs.writeFileSync(`${namePrefix}.json`, JSON.stringify(notes));
   fs.writeFileSync(`${namePrefix}.nomelodia.json`, JSON.stringify(noMelodiaNotes));
-
-  // create midi track
-  const midi = new Midi();
-  const trackWithMelodia = midi.addTrack();
-  trackWithMelodia.name = namePrefix;
-
-  notes.forEach((note) => {
-    trackWithMelodia.addNote({
-      midi: note.pitchMidi,
-      duration: note.durationSeconds,
-      time: note.startTimeSeconds,
-      velocity: note.amplitude,
-    });
-    if (note.pitchBends) {
-      note.pitchBends.forEach((b, i) =>
-        trackWithMelodia.addPitchBend({
-          time:
-            note.startTimeSeconds +
-            (note.durationSeconds * i) / note.pitchBends.length,
-          value: b,
-        })
-      );
-    }
-  });
-
-  const nomelodia = false; // melodia detection is much better
-  if (nomelodia) {
-
-    const trackNoMelodia = midi.addTrack();
-    trackNoMelodia.name = `${namePrefix}.nomelodia`;
-
-    noMelodiaNotes.forEach((note) => {
-
-      trackNoMelodia.addNote({
-        midi: note.pitchMidi,
-        duration: note.durationSeconds,
-        time: note.startTimeSeconds,
-        velocity: note.amplitude,
-      });
-
-      if (note.pitchBends) {
-        note.pitchBends.forEach((b, i) =>
-          trackWithMelodia.addPitchBend({
-            time:
-              note.startTimeSeconds +
-              (note.durationSeconds * i) / note.pitchBends.length,
-            value: b,
-          })
-        );
-      }
-
-    });
-  }
-
-  // write the midi track
-  fs.writeFileSync(`${namePrefix}.mid`, midi.toArray());
 }
 
 /**
@@ -140,7 +81,6 @@ function resample(audioBuffer) {
       channelData[i] = resampled[i];
     }
   }
-  ;
 
   console.log('resampled audio to sample rate ' + outputBuffer.sampleRate + ', buffer length ' + outputBuffer.length +
     ', duration ' + outputBuffer.duration + ' and ' + outputBuffer.numberOfChannels + ' channel.');
@@ -219,7 +159,6 @@ async function runTest() {
   // convert to note events with pitch, time and bends
   const poly = midiExport.noteFramesToTime(melodiaNotesAndBends);
 
-
   // ------- nomelodia ---------
 
   // nomelodia
@@ -243,8 +182,12 @@ async function runTest() {
   );
 
   // write json output
-  const jsonOutputFile = process.cwd() + '/test/test-output/pitch.detection.test';
-  writeOutputData(jsonOutputFile, poly, polyNoMelodia);
+  const namePrefix = process.cwd() + '/test/test-output/pitch.detection.test';
+  writeOutputData(namePrefix, poly, polyNoMelodia);
+
+  // export midi melodia and nomelodia
+  fs.writeFileSync(`${namePrefix}.melodia.mid`, midiExport.generateMidi(poly));
+  fs.writeFileSync(`${namePrefix}.nomelodia.mid`, midiExport.generateMidi(polyNoMelodia));
 
   console.log('Finished pitch detection of file ' + fileToPitch);
 }

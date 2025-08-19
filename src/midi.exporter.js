@@ -1,5 +1,4 @@
 import pkg from '@tonejs/midi';
-
 const {Midi} = pkg;
 
 const MIDI_OFFSET = 21;
@@ -22,7 +21,7 @@ const ANNOTATIONS_N_SEMITONES = 88;
 const N_FREQ_BINS_CONTOURS = ANNOTATIONS_N_SEMITONES * CONTOURS_BINS_PER_SEMITONE;
 
 /**
- *
+ * TODO name does not indicate the functionality, it converts to note events and midi
  */
 export class MidiExporter {
 
@@ -210,13 +209,13 @@ export class MidiExporter {
 
 
   /**
-   * Convert the onsets and frames as returend by BasicPitch to note events
+   * Convert the onsets and frames as returned by BasicPitch to note events
    *
    * @param {*} config.frames as returned from BasicPitch
    * @param {*} config.framesonsets as returned from BasicPitch
    * @param {*} config.onsetThresh
    * @param {*} config.frameThresh
-   * @param {*} config.minNoteLen TODO: does not work properly
+   * @param {*} config.minNoteLen TODO: verify to work properly
    * @param {*} config.inferOnsets
    * @param {*} config.maxFreq
    * @param {*} config.minFreq
@@ -480,7 +479,7 @@ export class MidiExporter {
   }
 
   /**
-   * Convert the frame indicees of the start frame and the duration frames to time in seconds
+   * Convert the frame indices of the start frame and the duration frames to time in seconds
    *
    * @param {*} notes
    *
@@ -508,10 +507,8 @@ export class MidiExporter {
   /**
    * Create the midi data from the timed note events
    *
-   * TODO switch to https://github.com/grimmdude/MidiWriterJS/
-   *
-   * @param {*} notes
-   * @returns
+   * @param notes
+   * @returns {Uint8Array}
    */
   generateMidi(notes) {
 
@@ -549,8 +546,6 @@ export class MidiExporter {
         });
       }
     });
-
-    return Buffer.from(midi.toArray());
+    return midi.toArray();
   }
-
 }
