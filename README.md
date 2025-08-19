@@ -1,7 +1,7 @@
 # pitch-js
 
 Note: 
-- this fork is still under construction and currently not fully operational.
+- this fork is still under construction and currently not operational.
 
 This fork is a plain javascript version of the original typescript library `basic-pitch-ts` with additional comments, api and tests. It is intended to be used in a jazz guitar training tool I'm currently working on. 
 
