@@ -4,10 +4,10 @@ import load from 'audio-loader';
 import {BasicPitch} from '../src/basic.pitch.js';
 import {MidiExporter} from '../src/midi.exporter.js';
 import pkg from '@tonejs/midi';
-
-const {Midi} = pkg;
 import * as tf from '@tensorflow/tfjs';
 import * as tfnode from '@tensorflow/tfjs-node';
+
+const {Midi} = pkg;
 
 const midiExport = new MidiExporter();
 
@@ -270,17 +270,13 @@ async function testVocal() {
   const basicPitch = new BasicPitch(model);
 
   // TODO what does prepare do ?
-  // const wavData = Array.from(Array(wavBuffer.length).keys()).map(key => wavBuffer._data[key]);
-  // const audioBuffer = AudioBuffer.fromArray([wavData], 22050);
   const [preparedDataTensor, audioOriginalLength] = await basicPitch.prepareData(wavBuffer.getChannelData(0));
 
-  const vocalDa80bpmDataPath = process.cwd() + '/test/test-input/vocal-da-80bpm.json';
-  const vocalDa80bpmDataFile = fs.readFileSync(vocalDa80bpmDataPath).toString();
-  const vocalDa80bpmData = JSON.parse(vocalDa80bpmDataFile);
+  const vocalData = JSON.parse(fs.readFileSync(process.cwd() + '/test/test-input/vocal-da-80bpm.json').toString());
 
-  const audioWindowedWindows = vocalDa80bpmData.audio_windowed.length;
-  const audioWindowedFrames = vocalDa80bpmData.audio_windowed[0].length;
-  const audioWindowedChannels = vocalDa80bpmData.audio_windowed[0][0].length;
+  const audioWindowedWindows = vocalData.audio_windowed.length;
+  const audioWindowedFrames = vocalData.audio_windowed[0].length;
+  const audioWindowedChannels = vocalData.audio_windowed[0][0].length;
 
   assert.deepEqual(preparedDataTensor.shape, [audioWindowedWindows, audioWindowedFrames, audioWindowedChannels], 'prepared data tensor shape should match');
 
@@ -290,15 +286,15 @@ async function testVocal() {
 
     const preparedData = preparedDataTensor.arraySync();
 
-    assert.deepEqual(preparedData.length, vocalDa80bpmData.audio_windowed.length, 'prepared data length should match');
-    assert.deepEqual(audioOriginalLength, vocalDa80bpmData.audio_original_length, 'audio original length should match');
+    assert.deepEqual(preparedData.length, vocalData.audio_windowed.length, 'prepared data length should match');
+    assert.deepEqual(audioOriginalLength, vocalData.audio_original_length, 'audio original length should match');
 
     preparedData.forEach((window, i) => {
-      assert.deepEqual(window.length, vocalDa80bpmData.audio_windowed[i].length, 'window length should match');
+      assert.deepEqual(window.length, vocalData.audio_windowed[i].length, 'window length should match');
       window.forEach((frame, j) => {
-        assert.deepEqual(frame.length, vocalDa80bpmData.audio_windowed[i][j].length, 'frame length should match');
+        assert.deepEqual(frame.length, vocalData.audio_windowed[i][j].length, 'frame length should match');
         frame.forEach((channel, k) => {
-          assert.deepEqual(toAllBeClose(channel, vocalDa80bpmData.audio_windowed[i][j][k], 5e-3, 0).pass
+          assert.deepEqual(toAllBeClose(channel, vocalData.audio_windowed[i][j][k], 5e-3, 0).pass
             , true, 'channel data should match');
         });
       });
@@ -314,28 +310,28 @@ async function testVocal() {
   });
 
   assert.deepEqual(pct, 1, 'in vocal test, pct should be 1 ');
-  assert.deepEqual(frames.length, vocalDa80bpmData.unwrapped_output.note.length, 'frame data length should match');
+  assert.deepEqual(frames.length, vocalData.unwrapped_output.note.length, 'frame data length should match');
 
   frames.forEach((frame, i) => {
-    assert.deepEqual(toAllBeClose(frame, vocalDa80bpmData.unwrapped_output.note[i], 5e-2, 0).pass, true, 'frame data should match');
+    assert.deepEqual(toAllBeClose(frame, vocalData.unwrapped_output.note[i], 5e-2, 0).pass, true, 'frame data should match');
   });
 
-  assert.deepEqual(onsets.length, vocalDa80bpmData.unwrapped_output.onset.length, 'onset data length should match');
+  assert.deepEqual(onsets.length, vocalData.unwrapped_output.onset.length, 'onset data length should match');
 
   onsets.forEach((onset, i) => {
-    assert.deepEqual(toAllBeClose(onset, vocalDa80bpmData.unwrapped_output.onset[i], 5e-3, 0).pass, true, 'onset data should match');
+    assert.deepEqual(toAllBeClose(onset, vocalData.unwrapped_output.onset[i], 5e-3, 0).pass, true, 'onset data should match');
   });
 
-  assert.deepEqual(contours.length, vocalDa80bpmData.unwrapped_output.contour.length, 'contour data length should match');
+  assert.deepEqual(contours.length, vocalData.unwrapped_output.contour.length, 'contour data length should match');
 
   contours.forEach((contour, i) => {
-    assert.deepEqual(toAllBeClose(contour, vocalDa80bpmData.unwrapped_output.contour[i], 5e-3, 0).pass, true, 'contour data should match');
+    assert.deepEqual(toAllBeClose(contour, vocalData.unwrapped_output.contour[i], 5e-3, 0).pass, true, 'contour data should match');
   });
 
   const melodiaConfig = {
-    onsetThresh: vocalDa80bpmData.onset_thresh,
-    frameThresh: vocalDa80bpmData.frame_thresh,
-    minNoteLength: vocalDa80bpmData.min_note_length,
+    onsetThresh: vocalData.onset_thresh,
+    frameThresh: vocalData.frame_thresh,
+    minNoteLength: vocalData.min_note_length,
     inferOnsets: true,
     maxFreq: 1000,
     minFreq: 60,
@@ -348,14 +344,13 @@ async function testVocal() {
 
   // -------------------
 
-  const vocalDa80bpmDataPathNoMelodia = process.cwd() + '/test/test-input/vocal-da-80bpm.nomelodia.json';
-  const vocalDa80bpmDataFileNoMelodia = fs.readFileSync(vocalDa80bpmDataPathNoMelodia).toString();
-  const vocalDa80bpmDataNoMelodia = JSON.parse(vocalDa80bpmDataFileNoMelodia);
+  const vocalDataFileNoMelodia = fs.readFileSync(process.cwd() + '/test/test-input/vocal-da-80bpm.nomelodia.json').toString();
+  const vocalDataNoMelodia = JSON.parse(vocalDataFileNoMelodia);
 
-  const nomelodiaConfig = {
-    onsetThresh: vocalDa80bpmDataNoMelodia.onset_thresh,
-    frameThresh: vocalDa80bpmDataNoMelodia.frame_thresh,
-    minNoteLength: vocalDa80bpmDataNoMelodia.min_note_length,
+  const noMelodiaConfig = {
+    onsetThresh: vocalDataNoMelodia.onset_thresh,
+    frameThresh: vocalDataNoMelodia.frame_thresh,
+    minNoteLength: vocalDataNoMelodia.min_note_length,
     inferOnsets: true,
     maxFreq: 1000,
     minFreq: 60,
@@ -363,8 +358,8 @@ async function testVocal() {
     energyTolerance: 11,
   }
 
-  const toNotesPolyMelodia = midiExport.outputToNotesPoly(frames, onsets, nomelodiaConfig);
-  const polyNoMelodia = midiExport.noteFramesToTime(midiExport.addPitchBendsToNoteEvents(contours, toNotesPolyMelodia));
+  const toNotesPolyNoMelodia = midiExport.outputToNotesPoly(frames, onsets, noMelodiaConfig);
+  const polyNoMelodia = midiExport.noteFramesToTime(midiExport.addPitchBendsToNoteEvents(contours, toNotesPolyNoMelodia));
 
   //--------
 
@@ -380,9 +375,9 @@ async function testVocal() {
     });
   }
 
-  assert.deepEqual(toBeCloseToMidi(polyMelodia, getReceived(vocalDa80bpmData), 1e-2, 0), true, 'exported vocal data shall match the calculated data');
+  assert.deepEqual(toBeCloseToMidi(polyMelodia, getReceived(vocalData), 1e-2, 0), true, 'exported vocal data shall match the calculated data');
 
-  assert.deepEqual(toBeCloseToMidi(polyNoMelodia, getReceived(vocalDa80bpmDataNoMelodia), 1e-2, 0), true, 'exported vocal data shall match the calculated data');
+  assert.deepEqual(toBeCloseToMidi(polyNoMelodia, getReceived(vocalDataNoMelodia), 1e-2, 0), true, 'exported vocal data shall match the calculated data');
 
   console.log('Vocal test passed matching all asserts');
 }
