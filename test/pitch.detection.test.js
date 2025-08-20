@@ -6,8 +6,8 @@ import {AudioContext} from 'web-audio-api';
 import {BasicPitch} from '../src/basic.pitch.js';
 import {PitchEvaluator} from '../src/pitch.evaluator.js';
 import {MidiExporter} from '../src/midi.exporter.js';
-import * as tfnode from '@tensorflow/tfjs-node';
 import load from "audio-loader";
+import * as tfnode from '@tensorflow/tfjs-node';
 
 /**
  * convert the midi pitch to human readable pitch

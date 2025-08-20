@@ -158,8 +158,7 @@ function toBeCloseToMidi(received, argument, atol = 1e-3, rtol = 1e-5) {
 async function testCMajor() {
 
   // load the audio
-  const audioPath = process.cwd() + '/test/test-input/C_major.resampled.mp3';
-  const audioBuffer = await load(audioPath);
+  const audioBuffer = await load(process.cwd() + '/test/test-input/C_major.resampled.mp3');
 
   const frames = [];
   const onsets = [];
