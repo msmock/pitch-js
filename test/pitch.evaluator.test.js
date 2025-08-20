@@ -2,51 +2,54 @@ import * as tf from '@tensorflow/tfjs-node';
 import midipkg from '@tonejs/midi';
 
 const {Midi} = midipkg;
+import {PitchEvaluator} from '../src/pitch.evaluator.js';
 import {MidiExporter} from '../src/midi.exporter.js';
 import assert from 'assert';
 
 let testdata;
 
 // construct with midi instrument 24 (Acoustic Guitar (nylon)) and tempo 120
-let toMidi = new MidiExporter();
+let pitchEvaluator = new PitchEvaluator();
 
-assert.deepEqual(toMidi.hzToMidi(440), 69, 'hzToMidi should understands what 440Hz is');
+assert.deepEqual(pitchEvaluator.hzToMidi(440), 69, 'hzToMidi should understands what 440Hz is');
 
-assert.deepEqual(toMidi.midiToHz(69), 440, 'midiToHz understands what 69 is');
+assert.deepEqual(pitchEvaluator.midiToHz(69), 440, 'midiToHz understands what 69 is');
 
-assert.deepEqual(toMidi.midiPitchToContourBin(69), 144, 'midiPitchToContourBin should be able to convert 69');
+assert.deepEqual(pitchEvaluator.midiPitchToContourBin(69), 144, 'midiPitchToContourBin should be able to convert 69');
 
 testdata = [[0, 0], [1, 0.0116], [2, 0.0232]];
 testdata.forEach((data) => {
   // console.log(data[0] + ' ' + data[1]);
-  assert.deepEqual(toMidi.modelFrameToTime(data[0]).toFixed(4), data[1], 'modelFrameToTime returns correct times');
+  assert.deepEqual(pitchEvaluator.modelFrameToTime(data[0]).toFixed(4), data[1], 'modelFrameToTime returns correct times');
 });
 
 testdata = [[[], null], [[1, 2, -1], 1],];
 testdata.forEach((data) => {
   // console.log(data[0] + ' ' + data[1]);
-  assert.deepEqual(toMidi.argMax(data[0]), data[1], 'argMax handles to handle empty and nonempty inputs correctly');
+  assert.deepEqual(pitchEvaluator.argMax(data[0]), data[1], 'argMax handles to handle empty and nonempty inputs correctly');
 });
 
 testdata = [[10, 11, 12], [13, 14, 15]];
-assert.deepEqual(toMidi.argMaxAxis1(testdata), [2, 2], 'argMaxAxis1 returns the correct indices');
+assert.deepEqual(pitchEvaluator.argMaxAxis1(testdata), [2, 2], 'argMaxAxis1 returns the correct indices');
 
 testdata = [[1, 2], [3, 4]];
-const [X, Y] = toMidi.whereGreaterThanAxis1(testdata, 1);
+const [X, Y] = pitchEvaluator.whereGreaterThanAxis1(testdata, 1);
 assert.deepEqual(X, [0, 1, 1], 'whereGreaterThanAxis1 should return all elements greater than threshold');
 assert.deepEqual(Y, [1, 0, 1], 'whereGreaterThanAxis1 should return all elements greater than threshold');
 
 const expectedMean = 2;
 const expectedStd = 2;
-const [mean, std] = toMidi.meanStdDev(tf
+const [mean, std] = pitchEvaluator.meanStdDev(tf
   .randomNormal([1000, 1000], expectedMean, expectedStd, 'float32')
   .arraySync());
 
 assert.deepEqual(mean.toFixed(2), 2, 'meanStdDev should return a mean and standard deviation of (2, 2) for an N(2, 4) array');
 assert.deepEqual(std.toFixed(2), 2, 'meanStdDev should return a mean and standard deviation of (2, 2) for an N(2, 4) array');
 
+const midiExporter = new MidiExporter(120, 25, [4,4]);
+
 const generatedMidiData = new Midi(
-  toMidi.generateMidi([
+  midiExporter.generateMidi([
     {
       startTimeSeconds: 1,
       durationSeconds: 2,

@@ -2,14 +2,14 @@ import fs from 'fs';
 import assert from 'assert';
 import load from 'audio-loader';
 import {BasicPitch} from '../src/basic.pitch.js';
-import {MidiExporter} from '../src/midi.exporter.js';
+import {PitchEvaluator} from '../src/pitch.evaluator.js';
 import pkg from '@tonejs/midi';
 import * as tf from '@tensorflow/tfjs';
 import * as tfnode from '@tensorflow/tfjs-node';
 
 const {Midi} = pkg;
 
-const midiExport = new MidiExporter();
+const pitchEvaluator = new PitchEvaluator();
 
 /**
  *
@@ -210,9 +210,9 @@ async function testCMajor() {
     energyTolerance: 11,
   }
 
-  const notesPoly = midiExport.outputToNotesPoly(frames, onsets, melodiaConfig);
-  const bendedNotesPoly = midiExport.addPitchBendsToNoteEvents(contours, notesPoly);
-  const poly = midiExport.noteFramesToTime(bendedNotesPoly);
+  const notesPoly = pitchEvaluator.outputToNotesPoly(frames, onsets, melodiaConfig);
+  const bendedNotesPoly = pitchEvaluator.addPitchBendsToNoteEvents(contours, notesPoly);
+  const poly = pitchEvaluator.noteFramesToTime(bendedNotesPoly);
 
   // nomelodia
   const nomelodiaConfig = {
@@ -226,8 +226,8 @@ async function testCMajor() {
     energyTolerance: 11,
   }
 
-  const polyNoMelodia = midiExport.noteFramesToTime(
-    midiExport.addPitchBendsToNoteEvents(contours, midiExport.outputToNotesPoly(frames, onsets, nomelodiaConfig)));
+  const polyNoMelodia = pitchEvaluator.noteFramesToTime(
+    pitchEvaluator.addPitchBendsToNoteEvents(contours, pitchEvaluator.outputToNotesPoly(frames, onsets, nomelodiaConfig)));
 
   const jsonOutputFile = process.cwd() + '/test/test-output/cmajor.test';
   writeDebugOutput(jsonOutputFile, poly, polyNoMelodia);
@@ -339,8 +339,8 @@ async function testVocal() {
     energyTolerance: 11,
   }
 
-  const toNotesPoly = midiExport.outputToNotesPoly(frames, onsets, melodiaConfig);
-  const polyMelodia = midiExport.noteFramesToTime(midiExport.addPitchBendsToNoteEvents(contours, toNotesPoly));
+  const toNotesPoly = pitchEvaluator.outputToNotesPoly(frames, onsets, melodiaConfig);
+  const polyMelodia = pitchEvaluator.noteFramesToTime(pitchEvaluator.addPitchBendsToNoteEvents(contours, toNotesPoly));
 
   // -------------------
 
@@ -358,8 +358,8 @@ async function testVocal() {
     energyTolerance: 11,
   }
 
-  const toNotesPolyNoMelodia = midiExport.outputToNotesPoly(frames, onsets, noMelodiaConfig);
-  const polyNoMelodia = midiExport.noteFramesToTime(midiExport.addPitchBendsToNoteEvents(contours, toNotesPolyNoMelodia));
+  const toNotesPolyNoMelodia = pitchEvaluator.outputToNotesPoly(frames, onsets, noMelodiaConfig);
+  const polyNoMelodia = pitchEvaluator.noteFramesToTime(pitchEvaluator.addPitchBendsToNoteEvents(contours, toNotesPolyNoMelodia));
 
   //--------
 

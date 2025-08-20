@@ -4,6 +4,7 @@ import {Resampler} from '../lib/resampler.js';
 import {ConvertToWav} from '../lib/convert2wav.js';
 import {AudioContext} from 'web-audio-api';
 import {BasicPitch} from '../src/basic.pitch.js';
+import {PitchEvaluator} from '../src/pitch.evaluator.js';
 import {MidiExporter} from '../src/midi.exporter.js';
 import * as tfnode from '@tensorflow/tfjs-node';
 import load from "audio-loader";
@@ -148,16 +149,16 @@ async function runTest() {
     energyTolerance: 20, // was 11
   }
 
-  const midiExport = new MidiExporter(180);
+  const pitchEvaluator = new PitchEvaluator();
 
   // convert the onsets and frames as returend by BasicPitch to note events
-  const melodiaNoteEvents = midiExport.outputToNotesPoly(frames, onsets, config);
+  const melodiaNoteEvents = pitchEvaluator.outputToNotesPoly(frames, onsets, config);
 
   // the extracted melodia notes
-  const melodiaNotesAndBends = midiExport.addPitchBendsToNoteEvents(contours, melodiaNoteEvents);
+  const melodiaNotesAndBends = pitchEvaluator.addPitchBendsToNoteEvents(contours, melodiaNoteEvents);
 
   // convert to note events with pitch, time and bends
-  const poly = midiExport.noteFramesToTime(melodiaNotesAndBends);
+  const poly = pitchEvaluator.noteFramesToTime(melodiaNotesAndBends);
 
   // ------- nomelodia ---------
 
@@ -174,10 +175,10 @@ async function runTest() {
   }
 
   // the extracted nomelodia notes
-  const noMelodiaNotesAndBends = midiExport.addPitchBendsToNoteEvents(contours, midiExport.outputToNotesPoly(frames, onsets, config));
+  const noMelodiaNotesAndBends = pitchEvaluator.addPitchBendsToNoteEvents(contours, pitchEvaluator.outputToNotesPoly(frames, onsets, config));
 
   // convert to note events with pitch, time and bends
-  const polyNoMelodia = midiExport.noteFramesToTime(
+  const polyNoMelodia = pitchEvaluator.noteFramesToTime(
     noMelodiaNotesAndBends
   );
 
@@ -186,8 +187,9 @@ async function runTest() {
   writeOutputData(namePrefix, poly, polyNoMelodia);
 
   // export midi melodia and nomelodia
-  fs.writeFileSync(`${namePrefix}.melodia.mid`, midiExport.generateMidi(poly));
-  fs.writeFileSync(`${namePrefix}.nomelodia.mid`, midiExport.generateMidi(polyNoMelodia));
+  const midiExporter = new MidiExporter(180);
+  fs.writeFileSync(`${namePrefix}.melodia.mid`, midiExporter.generateMidi(poly));
+  fs.writeFileSync(`${namePrefix}.nomelodia.mid`, midiExporter.generateMidi(polyNoMelodia));
 
   console.log('Finished pitch detection of file ' + fileToPitch);
 }
