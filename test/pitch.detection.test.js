@@ -95,7 +95,7 @@ function resample(audioBuffer) {
 async function runTest() {
 
   // the audio file to pitch
-  const fileToPitch = process.cwd() + '/test/test-input/guitar-c-arp.wav';
+  const fileToPitch = process.cwd() + '/test/test-input/guitar-c-arp.mp3';
   let audioBuffer = await load(fileToPitch);
 
   console.log('Run Basic Pitch with audio ' + fileToPitch);
@@ -148,7 +148,7 @@ async function runTest() {
     energyTolerance: 20, // was 11
   }
 
-  const midiExport = new MidiExporter();
+  const midiExport = new MidiExporter(180);
 
   // convert the onsets and frames as returend by BasicPitch to note events
   const melodiaNoteEvents = midiExport.outputToNotesPoly(frames, onsets, config);
